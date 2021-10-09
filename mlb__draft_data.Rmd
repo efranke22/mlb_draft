@@ -1,0 +1,43 @@
+---
+title: "MLB Draft - Building the database"
+author: "Erin Franke"
+date: "10/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Load libraries, data, and clean 
+
+Load libraries
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+```
+
+Load draft data. Read in the debuts rds file, which was obtained by joining together each season's new debuts dating back to 1987. The data comes from Baseball Reference. 
+```{r}
+#draft data
+draft <- read_csv("data/draft_1965_2019_test.csv")
+debuts <- read_rds("data/debuts.rds")
+```
+
+Clean the draft dataset. Filter for all draft years since 1987, since that is the first year without the Secondary January and June Amateur draft. Also remove the players drafted in the Rule V draft phases. Select the variables that we plan to use. 
+```{r}
+draft_clean <- draft %>%
+  filter(year >1986, description == "June Amateur Draft") %>%
+  mutate(height = height_inches + 12*height_feet, 
+          hs_draftee = grepl("\\bHS\\b", school)) %>%
+  select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, milb_g, round, round_sort, year, weight, height, bats, pick, overall, team_full, league_full, primary_position, team_abbrev, throws, league_id, school, trans_date, signed_sw, round_desc)
+```
+
+Join the two datasets together by player. Using a left join keeps all players that were drafted, even if they did not make the major leagues. 
+```{r}
+draft_debut <- draft_clean %>%
+  left_join(debuts, by = c("name_first_last" = "Name", "birth_date" = "Birthdate")) %>%
+  select(name_first_last, name_last_first, hs_draftee, mlb_g, milb_g, round, year, pick, overall, trans_date, signed_sw, `Draft/Signing`, Debut, Age, Pos, primary_position, WAR, B, T, Birthplace, school, team_full, weight, height)
+```
+
