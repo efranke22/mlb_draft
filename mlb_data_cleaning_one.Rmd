@@ -223,11 +223,26 @@ Read in the debuts rds file, which was obtained by joining together each season'
 ```{r}
 draft <- read_csv("data/draft_1965_2019_test_clean.csv")
 
-# remove totals from the pitchers column and strip "HOF" from the hall of framers names
+# read in pitcher debuts and remove totals from the pitchers column and strip "HOF" from the hall of framers names
 pitch_debuts <- read_rds("data/pitch_debuts.rds") %>%
   filter(Name != "Totals") %>%
   mutate(Name = str_remove_all(Name, " HOF"))
+
+# read in all position player debuts since 1987
 all_debuts <- read_rds("data/debuts.rds")
+
+#read in tommy john surgeries 
+tommyjohn <- read_csv("data/tommyjohn.csv") %>%
+  filter(Position == "P") %>%
+  select(Player, `TJ Surgery Date`, Level, `Return Date (same level)`, `Recovery Time (months)`, `Surgeon(s)`, `Post-TJ MLB G`, `Post-TJ MLB IP/PA`, `Active`) %>%
+  rename(surgery_date = `TJ Surgery Date`, 
+         tj_level = Level, 
+         tj_return_same_level = `Return Date (same level)`, 
+         tj_recovery_months = `Recovery Time (months)`, 
+         tj_surgeon = `Surgeon(s)`, 
+         post_tj_mlb_g = `Post-TJ MLB G`, 
+         post_tj_mlb_ip_per_pa = `Post-TJ MLB IP/PA`, 
+         active = Active)
 ```
 
 Clean the draft dataset. Filter for all draft years since 1987, since that is the first year without the Secondary January and June Amateur draft. Also remove the players drafted in the Rule V draft phases. Select the variables that we plan to use. 
@@ -298,15 +313,20 @@ pitchers <- draft_clean_pitch %>%
   filter(name_first_last %notin% c("Ben Shelton", "Mark Smith", "Tom Marsh", "J.R. Phillips", "Scott Stahoviak", "Ryan Klesko", "Pedro Valdes", "Scott McClain", "Lou Collier", "Tom Evans", "Jon Zuber", "Bryant Nelson", "Jermaine Dye", "Jim Chamblee", "Brian Buchanan", "Brad Wilkerson", "Valentino Pascucci", "Matt Kata", "Doug DeVore", "Ryan Christenson", "Mike Rose", "Jason Alfaro", "Brad Hawpe", "Greg Colbrunn", "Justin Knoedler", "Dallas McPherson", "Kelly Johnson", "Tommy Murphy", "Chip Ambres", "Nick Markakis", "Clay Timpner", "Matt Downs", "Mark Trumbo", "Charlie Blackmon", "Buster Posey", "Brandon Belt", "Carlos Moncrief", "Bryce Brentz", "Alex Hassan", "Kaleb Cowart", "Chad Wallach", "Brock Stassi", "Jake Cave", "Sam Hilliard", "J.B. Miadich", "Dave Williams", "Mike Neu", "David Davidson"))
 ```
 
-
 Filter for the most recent draft date of each pitcher. 
 ```{r}
-pitchers %>%
+pitchers_recent_draft <- pitchers %>%
   group_by(name_first_last, birth_date) %>%
-  mutate(most_recent = max(year))
+  filter(row_number() == n())
 ```
 
-
+Join with tommy john data. Create an indictor variable that indicates if the player has had tommy john surgery. 
+```{r}
+pitchers_recent_draft %>%
+  left_join(tommyjohn, by = c("name_first_last" = "Player")) %>%
+  mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
+                                 TRUE ~ 0))
+```
 
 
 
