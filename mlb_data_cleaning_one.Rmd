@@ -232,7 +232,7 @@ pitch_debuts <- read_rds("data/pitch_debuts.rds") %>%
 all_debuts <- read_rds("data/debuts.rds")
 
 #read in tommy john surgeries 
-tommyjohn <- read_csv("data/tommyjohn.csv") %>%
+tommyjohn <- read_xlsx("data/tommyjohndata.xlsx") %>%
   filter(Position == "P") %>%
   select(Player, `TJ Surgery Date`, Level, `Return Date (same level)`, `Recovery Time (months)`, `Surgeon(s)`, `Post-TJ MLB G`, `Post-TJ MLB IP/PA`, `Active`) %>%
   rename(surgery_date = `TJ Surgery Date`, 
@@ -320,12 +320,13 @@ pitchers_recent_draft <- pitchers %>%
   filter(row_number() == n())
 ```
 
-Join with tommy john data. Create an indictor variable that indicates if the player has had tommy john surgery. 
+Join with tommy john data. Create an indicator variable that indicates if the player has had tommy john surgery. 
 ```{r}
 pitchers_recent_draft %>%
   left_join(tommyjohn, by = c("name_first_last" = "Player")) %>%
   mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
-                                 TRUE ~ 0))
+                                 TRUE ~ 0), 
+         surgery_age = time_length(difftime(surgery_date, birth_date), "years"))
 ```
 
 
