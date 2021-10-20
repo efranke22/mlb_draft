@@ -16,28 +16,299 @@ Load libraries
 library(tidyverse)
 library(readxl)
 library(lubridate)
+library(stringr)
+`%notin%` <- Negate(`%in%`)
 ```
 
-Load draft data. Read in the debuts rds file, which was obtained by joining together each season's new debuts dating back to 1987. The data comes from Baseball Reference. 
+Load pitch data from Baseball Reference
+```{r, eval=FALSE}
+debuts1987 <- read_xls("data/pitcherdebuts/debuts1987.xls") %>%
+  mutate(yeard = 1987, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1987$Debut <-as.Date(with(debuts1987,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1988 <- read_xls("data/pitcherdebuts/debuts1988.xls") %>%
+  mutate(yeard = 1988, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1988$Debut <-as.Date(with(debuts1988,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1989 <- read_xls("data/pitcherdebuts/debuts1989.xls") %>%
+  mutate(yeard = 1989, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1989$Debut <-as.Date(with(debuts1989,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1990 <- read_xls("data/pitcherdebuts/debuts1990.xls") %>%
+  mutate(yeard = 1990, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1990$Debut <-as.Date(with(debuts1990,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1991 <- read_xls("data/pitcherdebuts/debuts1991.xls") %>%
+  mutate(yeard = 1991, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1991$Debut <-as.Date(with(debuts1991,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1992 <- read_xls("data/pitcherdebuts/debuts1992.xls") %>%
+  mutate(yeard = 1992, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1992$Debut <-as.Date(with(debuts1992,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1993 <- read_xls("data/pitcherdebuts/debuts1993.xls") %>%
+  mutate(yeard = 1993, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1993$Debut <-as.Date(with(debuts1993,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1994 <- read_xls("data/pitcherdebuts/debuts1994.xls") %>%
+  mutate(yeard = 1994, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1994$Debut <-as.Date(with(debuts1994,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1995 <- read_xls("data/pitcherdebuts/debuts1995.xls") %>%
+  mutate(yeard = 1995, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1995$Debut <-as.Date(with(debuts1995,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1996 <- read_xls("data/pitcherdebuts/debuts1996.xls") %>%
+  mutate(yeard = 1996, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1996$Debut <-as.Date(with(debuts1996,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1997 <- read_xls("data/pitcherdebuts/debuts1997.xls") %>%
+  mutate(yeard = 1997, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1997$Debut <-as.Date(with(debuts1997,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1998 <- read_xls("data/pitcherdebuts/debuts1998.xls") %>%
+  mutate(yeard = 1998, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1998$Debut <-as.Date(with(debuts1998,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts1999 <- read_xls("data/pitcherdebuts/debuts1999.xls") %>%
+  mutate(yeard = 1999, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1999$Debut <-as.Date(with(debuts1999,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2000 <- read_xls("data/pitcherdebuts/debuts2000.xls") %>%
+  mutate(yeard = 2000, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2000$Debut <-as.Date(with(debuts2000,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2001 <- read_xls("data/pitcherdebuts/debuts2001.xls") %>%
+  mutate(yeard = 2001, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2001$Debut <-as.Date(with(debuts2001,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2002 <- read_xls("data/pitcherdebuts/debuts2002.xls") %>%
+  mutate(yeard = 2002, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2002$Debut <-as.Date(with(debuts2002,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2003 <- read_xls("data/pitcherdebuts/debuts2003.xls") %>%
+  mutate(yeard = 2003, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2003$Debut <-as.Date(with(debuts2003,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2004 <- read_xls("data/pitcherdebuts/debuts2004.xls") %>%
+  mutate(yeard = 2004, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2004$Debut <-as.Date(with(debuts2004,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2005 <- read_xls("data/pitcherdebuts/debuts2005.xls") %>%
+  mutate(yeard = 2005, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2005$Debut <-as.Date(with(debuts2005,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2006 <- read_xls("data/pitcherdebuts/debuts2006.xls") %>%
+  mutate(yeard = 2006, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2006$Debut <-as.Date(with(debuts2006,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2007 <- read_xls("data/pitcherdebuts/debuts2007.xls") %>%
+  mutate(yeard = 2007, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2007$Debut <-as.Date(with(debuts2007,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2008 <- read_xls("data/pitcherdebuts/debuts2008.xls") %>%
+  mutate(yeard = 2008, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2008$Debut <-as.Date(with(debuts2008,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2009 <- read_xls("data/pitcherdebuts/debuts2009.xls") %>%
+  mutate(yeard = 2009, 
+         dayd = day(Debut),
+         monthd = month(Debut),
+         ERA = as.numeric(ERA))
+debuts2009$Debut <-as.Date(with(debuts2009,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2010 <- read_xls("data/pitcherdebuts/debuts2010.xls") %>%
+  mutate(yeard = 2010, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2010$Debut <-as.Date(with(debuts2010,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2011 <- read_xls("data/pitcherdebuts/debuts2011.xls") %>%
+  mutate(yeard = 2011, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2011$Debut <-as.Date(with(debuts2011,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2012 <- read_xls("data/pitcherdebuts/debuts2012.xls") %>%
+  mutate(yeard = 2012, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2012$Debut <-as.Date(with(debuts2012,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2013 <- read_xls("data/pitcherdebuts/debuts2013.xls") %>%
+  mutate(yeard = 2013, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2013$Debut <-as.Date(with(debuts2013,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2014 <- read_xls("data/pitcherdebuts/debuts2014.xls") %>%
+  mutate(yeard = 2014, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2014$Debut <-as.Date(with(debuts2014,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2015 <- read_xls("data/pitcherdebuts/debuts2015.xls") %>%
+  mutate(yeard = 2015, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2015$Debut <-as.Date(with(debuts2015,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2016 <- read_xls("data/pitcherdebuts/debuts2016.xls") %>%
+  mutate(yeard = 2016, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2016$Debut <-as.Date(with(debuts2016,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2017 <- read_xls("data/pitcherdebuts/debuts2017.xls") %>%
+  mutate(yeard = 2017, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2017$Debut <-as.Date(with(debuts2017,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2018 <- read_xls("data/pitcherdebuts/debuts2018.xls") %>%
+  mutate(yeard = 2018, 
+         dayd = day(Debut),
+         monthd = month(Debut), 
+         ERA = as.numeric(ERA))
+debuts2018$Debut <-as.Date(with(debuts2018,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2019 <- read_xls("data/pitcherdebuts/debuts2019.xls") %>%
+  mutate(yeard = 2019, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2019$Debut <-as.Date(with(debuts2019,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2020 <- read_xls("data/pitcherdebuts/debuts2020.xls") %>%
+  mutate(yeard = 2020, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2020$Debut <-as.Date(with(debuts2020,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+debuts2021 <- read_xls("data/pitcherdebuts/debuts2021.xls") %>%
+  mutate(yeard = 2021, 
+         dayd = day(Debut),
+         monthd = month(Debut)) %>%
+  select(Rk:Age, yeard:monthd)
+debuts2021$Debut <-as.Date(with(debuts2021,paste(yeard,monthd,dayd,sep="-")),"%Y-%m-%d")
+
+pitch_debuts <- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts1991, debuts1992, debuts1993, debuts1994, debuts1995, debuts1996, debuts1997, debuts1998, debuts1999, debuts2000, debuts2001, debuts2002, debuts2003, debuts2004, debuts2005, debuts2006, debuts2007, debuts2008, debuts2009, debuts2010, debuts2011, debuts2012, debuts2013, debuts2014, debuts2015, debuts2016, debuts2017, debuts2018, debuts2019, debuts2020, debuts2021)
+
+write_rds(pitch_debuts, "data/pitch_debuts.rds")
+```
+
+Load draft data. This file has birthdates changed for 8 eight players to match those on Baseball Reference. The players are: 
+
+John Ericks from 1967-06-16 to 1967-09-16 \
+T.J. Mathews from 1970-01-19 to 1970-01-09 \
+Bryan Ward from 1972-01-25 to 1972-01-28. \
+Rafael Carmona from 1972-10-02 to 1971-10-02 \
+Luther Hackman from 1974-10-06 to 1974-10-10 \
+Jason Ryan from 1976-01-23 to 1976-01-21 \
+Osvaldo Fernandez from 1968-11-04 to 1966-11-04 \
+Jim Parque from 1976-02-08 to 1975-02-08 \
+Dicky Gonzalez from 1978-10-21 to 1978-12-21 \
+Carmen Cali from 1978-11-02 to 1978-11-04 \
+
+Read in the debuts rds file, which was obtained by joining together each season's new pitcher debuts dating back to 1987. The data comes from Baseball Reference. The all debuts file comes from Baseball Reference and includes the debuts and birthdates of all players. 
 ```{r}
-#draft data
-draft <- read_csv("data/draft_1965_2019_test.csv")
-debuts <- read_rds("data/debuts.rds")
+draft <- read_csv("data/draft_1965_2019_test_clean.csv")
+
+# remove totals from the pitchers column and strip "HOF" from the hall of framers names
+pitch_debuts <- read_rds("data/pitch_debuts.rds") %>%
+  filter(Name != "Totals") %>%
+  mutate(Name = str_remove_all(Name, " HOF"))
+all_debuts <- read_rds("data/debuts.rds")
 ```
 
 Clean the draft dataset. Filter for all draft years since 1987, since that is the first year without the Secondary January and June Amateur draft. Also remove the players drafted in the Rule V draft phases. Select the variables that we plan to use. 
 ```{r}
-draft_clean <- draft %>%
-  filter(year >1986, description == "June Amateur Draft") %>%
+draft_clean_pitch <- draft %>%
+  filter(year >1986, description == "June Amateur Draft", primary_position %in% c("1", "LHP", "P", "RHP", "RP", "SP")) %>%
   mutate(height = height_inches + 12*height_feet, 
           hs_draftee = grepl("\\bHS\\b", school)) %>%
   select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, milb_g, round, round_sort, year, weight, height, bats, pick, overall, team_full, league_full, primary_position, team_abbrev, throws, league_id, school, trans_date, signed_sw, round_desc)
 ```
 
-Join the two datasets together by player. Using a left join keeps all players that were drafted, even if they did not make the major leagues. 
+Add birthdate to the pitching debut dataset. 
 ```{r}
-draft_debut <- draft_clean %>%
-  left_join(debuts, by = c("name_first_last" = "Name", "birth_date" = "Birthdate")) %>%
-  select(name_first_last, name_last_first, hs_draftee, mlb_g, milb_g, round, year, pick, overall, trans_date, signed_sw, `Draft/Signing`, Debut, Age, Pos, primary_position, WAR, B, T, Birthplace, school, team_full, weight, height)
+# use all debuts (includes position players to get each player's date of birth)
+all_debuts_bday <- all_debuts %>%
+  select(Name, Debut, Birthdate) %>%
+  mutate(Birthdate = as.Date(Birthdate))
+
+#join this with the pitch_debuts dataset.
+pitch_debuts <- pitch_debuts %>%
+  mutate(Debut = as.Date(Debut)) %>%
+  left_join(all_debuts_bday, by = c("Name", "Debut"))
 ```
+
+Join the two datasets together by player. First, rename the players in `pitch_debuts` to match the names from the draft dataset. I found these players to not be matching when joining and having the draft dataset denote them as having debuted but no debut date being listed.  \
+Using a left join keeps all players that were drafted, even if they did not make the major leagues. 
+```{r}
+pitch_debuts <- pitch_debuts %>%
+  mutate(Name = recode(Name, "Dave Wainhouse" = "David Wainhouse"), 
+         Name = recode(Name, "Rod Bolton" = "Rodney Bolton"), 
+         Name = recode(Name, "Joey Dawley" = "Joe Dawley"), 
+         Name = recode(Name, "William VanLandingham" = "William Van Landingham"), 
+         Name = recode(Name, "J.J. Thobe" = "J. J. Thobe"), 
+         Name = recode(Name, "Peter Munro" = "Pete Munro"), 
+         Name = recode(Name, "Roland de la Maza" = "Roland DeLaMaza"),
+         Name = recode(Name, "Danny Kolb" = "Dan Kolb"), 
+         Name = recode(Name, "Steve Randolph" = "Stephen Randolph"), 
+         Name = recode(Name, "Richie Barker" = "Richard Barker"), 
+         Name = recode(Name, "Dave Coggin" = "David Coggin"), 
+         Name = recode(Name, "Mike Gonzalez" = "Michael Gonzalez"),
+         Name = recode(Name, "Frank Gracesqui" = "Franklyn Gracesqui"), 
+         Name = recode(Name, "Dave Pember" = "David Pember"), 
+         Name = recode(Name, "Bobby Keppel" = "Bob Keppel"), 
+         Name = recode(Name, "Andy Sisco" = "Andrew Sisco"), 
+         Name = recode(Name, "Mike O'Connor" = "Michael O'Connor"), 
+         Name = recode(Name, "Robert Mosebach" = "Bobby Mosebach"), 
+         Name = recode(Name, "Jon Niese" = "Jonathon Niese"), 
+         Name = recode(Name, "Charles Leesman" = "Charlie Leesman"), 
+         Name = recode(Name, "Nathan Adcock" = "Nate Adcock"), 
+         Name = recode(Name, "Danny Herrera" = "Daniel Herrera"), 
+         Name = recode(Name, "Pat McCoy" = "Patrick McCoy"), 
+         Name = recode(Name, "Robbie Ross" = "Robbie Ross Jr."), 
+         Name = recode(Name, "T.J. House" = "TJ House"), 
+         Name = recode(Name, "Vidal Nuno III" = "Vidal Nuno"), 
+         Name = recode(Name, "Kenny Roberts" = "Ken Roberts"), 
+         Name = recode(Name, "Onelki García" = "Onelki Garcia"), 
+         Name = recode(Name, "James Sherfy" = "Jimmie Sherfy"),
+         Name = recode(Name, "Nestor Cortes Jr." = "Nestor Cortes"), 
+         Name = recode(Name, "Thomas Eshelman" = "Tom Eshelman"), 
+         Name = recode(Name, "Pete Fairbanks" = "Peter Fairbanks"), 
+         Name = recode(Name, "Matthew Festa" = "Matt Festa"), 
+         Name = recode(Name, "J.D. Hammer" = "JD Hammer"))
+
+#create pitchers using a left join. Filter to remove a bunch of names - these were listed as pitchers on the draft dataset but were position players in the MLB. 
+pitchers <- draft_clean_pitch %>%
+  left_join(pitch_debuts, by = c("name_first_last" = "Name", "birth_date" = "Birthdate")) %>%
+  select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, Debut, Age, milb_g, round, year, pick, team_full, overall, trans_date, signed_sw, Yrs, From, To, ASG, WAR, W, L, `W-L%`, ERA, G, GS, GF, CG, SHO, SV, IP, H, R, ER, HR, BB, IBB, SO, HBP, BK, WP, BF, WHIP) %>%
+  filter(name_first_last %notin% c("Ben Shelton", "Mark Smith", "Tom Marsh", "J.R. Phillips", "Scott Stahoviak", "Ryan Klesko", "Pedro Valdes", "Scott McClain", "Lou Collier", "Tom Evans", "Jon Zuber", "Bryant Nelson", "Jermaine Dye", "Jim Chamblee", "Brian Buchanan", "Brad Wilkerson", "Valentino Pascucci", "Matt Kata", "Doug DeVore", "Ryan Christenson", "Mike Rose", "Jason Alfaro", "Brad Hawpe", "Greg Colbrunn", "Justin Knoedler", "Dallas McPherson", "Kelly Johnson", "Tommy Murphy", "Chip Ambres", "Nick Markakis", "Clay Timpner", "Matt Downs", "Mark Trumbo", "Charlie Blackmon", "Buster Posey", "Brandon Belt", "Carlos Moncrief", "Bryce Brentz", "Alex Hassan", "Kaleb Cowart", "Chad Wallach", "Brock Stassi", "Jake Cave", "Sam Hilliard", "J.B. Miadich", "Dave Williams", "Mike Neu", "David Davidson"))
+```
+
+
+Filter for the most recent draft date of each pitcher. 
+```{r}
+pitchers %>%
+  group_by(name_first_last, birth_date) %>%
+  mutate(most_recent = max(year))
+```
+
+
+
+
+
+
 
