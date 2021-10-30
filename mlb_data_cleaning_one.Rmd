@@ -320,16 +320,31 @@ pitchers_recent_draft <- pitchers %>%
   filter(row_number() == n())
 ```
 
-Join with tommy john data. Create an indicator variable that indicates if the player has had tommy john surgery. 
+Join with tommy john data. Create an indicator variable that indicates if the player has had tommy john surgery. Create indicator variable for if the player had surgery. Create variable for approximate draft date, as well as a variable indicating when the surgery took place. 
 ```{r}
-pitchers_recent_draft %>%
+pitchers_complete <- pitchers_recent_draft %>%
   left_join(tommyjohn, by = c("name_first_last" = "Player")) %>%
   mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
                                  TRUE ~ 0), 
-         surgery_age = time_length(difftime(surgery_date, birth_date), "years"))
+         surgery_age = time_length(difftime(surgery_date, birth_date), "years"), 
+         apprx_draft_date = as.Date(paste(year, "06", "10", sep="-")), 
+         surgery_time = case_when(surgery_date > apprx_draft_date & surgery_date < Debut & Debut >= "1970-01-01" ~ "between draft/debut",
+          surgery_date <= apprx_draft_date & Debut > "1970-01-01" ~ "before draft date, player debuts", 
+          surgery_date >= Debut & Debut > "1970-01-01" ~ "after debut",
+          is.na(Debut) & surgery_date <= apprx_draft_date ~ "before draft, no debut", 
+          is.na(Debut) & surgery_date > apprx_draft_date ~ "after draft, no debut",
+          TRUE ~ "no surgery"),
+         mlb_g = case_when(is.na(Debut) == TRUE ~ 0, 
+                           TRUE ~ 1), 
+         mlb_g = as.factor(mlb_g),
+         surgery_time_binary = case_when(surgery_time %in% c("after draft, no debut", "after debut", "between draft/debut") ~ "after draft", 
+                                         surgery_time %in% c("before draft date, player debuts", "before draft, no debut") ~ "before draft", 
+                                         TRUE ~ "no surgery"))
+
+
+
+write_rds(pitchers_complete, "data/pitchers_complete.rds")
 ```
-
-
 
 
 

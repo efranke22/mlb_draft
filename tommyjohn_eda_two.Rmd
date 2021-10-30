@@ -1,0 +1,113 @@
+---
+title: 'EDA: Drafting Pitchers'
+author: "Erin Franke"
+date: "10/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+pitchers_complete <- read_rds("data/pitchers_complete.rds")
+```
+
+
+### Basic EDA exploration when Tommy John surgeries are happening and particularly for who
+Summary of proportion of pitchers receiving Tommy John surgery broken down by high school and college:
+```{r}
+#7.46% of drafted pitchers have received surgery 
+#7.57% of college draftees got surgery and 7.17% of HS draftees got surgery 
+pitchers_complete %>%
+  group_by(had_surgery, hs_draftee) %>%
+  count() %>%
+  group_by(hs_draftee) %>%
+  summarize(had_surgery, prop = n/sum(n))
+```
+
+Surgeries are occurring before the draft more often for those that do not debut. For those that debut, surgeries more often come after the draft (either before or after debuting). 
+```{r}
+pitchers_complete %>%
+  filter(had_surgery == 1) %>%
+  group_by(mlb_g, surgery_time_binary)%>%
+  count() %>%
+  group_by(mlb_g) %>%
+  summarize(mlb_g, surgery_time_binary, prop = n/sum(n)) %>%
+  mutate(mlb_g = recode(mlb_g, "0"="no debut", "1" = "debuted")) %>%
+  ggplot(aes(x=mlb_g, y=prop, fill=surgery_time_binary))+
+  geom_col()+
+  theme_minimal()+
+  labs(x = "", y="", title = "Tommy John surgeries occur more often before the draft for players that do not debut", fill = "") +
+  scale_fill_manual(values = c("darkgreen", "goldenrod2"))+
+ scale_y_continuous(expand = c(0,0))+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(size=10))
+```
+
+When filtering out surgeries taking place after a player debuts, we look at the proportion of players that debut for those not having surgery and those that had surgery either before being drafted or after being drafted (but before debuting if they did). We see that the proportion of players that debut is higher for players receiving the surgery. 
+```{r}
+pitchers_complete %>%
+  filter(surgery_time != "after debut") %>%
+  mutate(had_surgery = as.factor(had_surgery), 
+         had_surgery = recode(had_surgery, "0"="no surgery", "1" = "surgery")) %>%
+  group_by(mlb_g, had_surgery)%>%
+  count() %>%
+  group_by(had_surgery) %>%
+  summarize(mlb_g, had_surgery, prop = n/sum(n)) %>%
+  mutate(mlb_g = recode(mlb_g, "0"="no debut", "1" = "debuted")) %>%
+  ggplot(aes(x=had_surgery, y=prop, fill=mlb_g))+
+  geom_col()+
+  theme_minimal()+
+  labs(x = "", y="", title = "Players that recieve Tommy John surgery debut at a higher rate than those that don't", fill = "") +
+  scale_fill_manual(values = c("darkgreen", "goldenrod2"))+
+ scale_y_continuous(expand = c(0,0))+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(size=10))
+```
+
+```{r}
+pitchers_complete %>%
+  filter(surgery_time != "after debut") %>%
+  mutate(had_surgery = as.factor(had_surgery), 
+         had_surgery = recode(had_surgery, "0"="no surgery", "1" = "surgery")) %>%
+  group_by(mlb_g, had_surgery, surgery_time_binary)%>%
+  count() %>%
+  group_by(mlb_g) %>%
+  summarize(n, mlb_g, surgery_time_binary, prop = n/sum(n)) %>%
+  mutate(mlb_g = recode(mlb_g, "0"="no debut", "1" = "debuted")) %>%
+  ggplot(aes(x=mlb_g, y=prop, fill=surgery_time_binary))+
+  geom_col()+
+  theme_minimal()+
+  labs(x = "", y="", title = "Tommy John Surgery Occurances", fill = "") +
+  scale_fill_manual(values = c("darkgreen", "goldenrod2", "darkred"))+
+ scale_y_continuous(expand = c(0,0))
+
+pitchers_complete %>%
+  mutate(round = as.numeric(round)) %>%
+  filter(surgery_time != "after debut") %>%
+  mutate(had_surgery = as.factor(had_surgery), 
+         had_surgery = recode(had_surgery, "0"="no surgery", "1" = "surgery")) %>%
+  group_by(had_surgery, surgery_time_binary)%>%
+  summarize(mean(round, na.rm=TRUE))
+  
+
+
+pitchers_complete %>%
+  filter(had_surgery == 1, 
+         mlb_g == 1) %>%
+  group_by(mlb_g, surgery_time) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x=mlb_g, y=prop, fill = surgery_time))+
+  geom_col()+
+  theme_minimal()+
+  scale_fill_manual(values = c("darkgreen", "goldenrod2", "darkred"))+
+  scale_y_continuous(expand = c(0,0))+
+  labs(x = "", y="", title = "When did Tommy John Surgery occur for players that debut?", fill="")+
+  theme(axis.text.x = element_blank())
+  
+```
+
