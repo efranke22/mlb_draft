@@ -1,0 +1,127 @@
+---
+title: "MLB career stats EDA"
+author: "Erin Franke"
+date: "11/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r}
+library(tidyverse)
+pitchers_complete <- read_rds("data/pitchers_complete.rds")
+```
+
+### How to career stats compare for players drafted in HS versus college?
+
+From the table below, we learn that the large majority of players are not drafted in high school and do not debut. However, we learn that the debut rates are very similar given whether or not a player was drafted in high school or college. 
+```{r}
+pitchers_complete %>%
+  group_by(hs_draftee, mlb_g) %>%
+  count() %>%
+  group_by(hs_draftee) %>%
+  mutate(prop = n/sum(n))
+```
+
+Filter for players that debuted. Try to denote starters and relievers from one another. 
+```{r}
+pitchers_debut <- pitchers_complete %>%
+  filter(mlb_g == 1) %>%
+  mutate(starter = case_when(GS >= 1 ~ "starter", 
+                             TRUE ~ "reliever"), 
+         draft_to_debut = time_length(difftime(Debut, apprx_draft_date), "years"))
+```
+
+If we want to evaluate the success of all pitchers together, we should choose something that does not penalize starters over relievers or the opposite. The table below shows some stats that we might want to use to evaluate "success". If we want to evaluate the success of all pitchers together, ERA and WHIP seem like the best options. 
+```{r}
+pitchers_debut %>%
+  group_by(starter) %>%
+  filter(ERA < 100) %>% #removes single pitcher with an ERA of Inf
+  summarize(mean_IP = round(mean(IP)), 
+            mean_whip = round(mean(WHIP, na.rm=TRUE), 2), 
+            mean_WAR = round(mean(WAR, na.rm=TRUE), 1), 
+            mean_ASG = round(mean(ASG, na.rm=TRUE), 2), 
+            mean_ERA = round(mean(ERA, na.rm=TRUE), 1), 
+            mean_G = round(mean(G, na.rm=TRUE), 1))
+```
+
+69% of HS draftees end up as starters, while only 55% of college draftees end up as starters in the MLB. 
+```{r}
+pitchers_debut %>%
+  group_by(starter, hs_draftee) %>%
+  count() %>%
+  group_by(hs_draftee) %>%
+  mutate(prop = n/sum(n))
+```
+
+Now, compare their stats. Things to notice \
+- Given that players debut, high school draftees tend to average innings pitched in the majors, especially on a starter level. 
+  - Understandably, WAR is then higher for HS draft picks. 
+- WHIP seem almost identical for HS versus college starters and relievers. 
+- HS draftee starters that debut appear to make the All-Star game at a higher rate.
+```{r}
+#compare stats between high school versus college draftees in 
+pitchers_debut %>%
+  group_by(hs_draftee, starter) %>%
+  filter(ERA < 100) %>% #removes single pitcher with an ERA of Inf
+  summarize(mean_IP = round(mean(IP)), 
+            mean_whip = round(mean(WHIP, na.rm=TRUE), 2), 
+            mean_WAR = round(mean(WAR, na.rm=TRUE), 1), 
+            mean_ASG = round(mean(ASG, na.rm=TRUE), 2), 
+            mean_ERA = round(mean(ERA, na.rm=TRUE), 1), 
+            mean_G = round(mean(G, na.rm=TRUE), 1))
+```
+
+It looks like given a high school pitcher makes the MLB, he appears to perform slightly longer/better than non HS draftees when comparing starters. Relievers seem about identical. What about the process of making it to the majors? 
+
+We noticed above that HS draftees seem to make the majors at a rate slightly higher than college draftees. How long does the time between draft and debut typically take?
+
+On average, high school draftees took above 5.31 years between being drafted and reaching the majors, while college draftees only took 3.97. 
+```{r}
+pitchers_debut %>%
+  group_by(hs_draftee) %>%
+  summarize(mean(draft_to_debut))
+
+pitchers_debut %>%
+  ggplot(aes(x=draft_to_debut, fill=hs_draftee))+
+  geom_density(alpha = 0.5)+
+  theme_classic()+
+  labs(x="years between draft and debut", y="", fill = "HS draftee")
+```
+
+### Looking a little at Tommy John surgery within a HS/college lense
+In this bigger gap of time for players that do debut, do Tommy John surgeries happen at a higher rate? From the table below, we learn that:
+  - For HS draftees, we learn it is very rare of TJ surgery to happen before being drafted. Only 4% of players that got surgery and debuted had this happen. This is more common for college draftees at 19%. 
+  - Surgery happens between draft and debut at a higher rate in HS draftees than college draftees (given surgery occurs at some point and the player debuts). This makes sense given that this process typically takes longer for HS athletes than college ones.
+```{r}
+pitchers_debut %>% 
+  filter(surgery_time != "no surgery") %>%
+  group_by(surgery_time, hs_draftee) %>%
+  count() %>%
+  group_by(hs_draftee) %>%
+  mutate(prop = n/sum(n))
+```
+
+What are the risks of drafting a player that's had TJ surgery?
+  - We looked at this in the TJ EDA and got mixed results. Due to the way that the data was collected, it is likely that we are favoring obtaining surgeries of the most "elite" players and therefore struggle to say something like, "Drafting a pitcher than has already had TJ is associated with a lower probability of a debut". 
+
+We can try looking at the career stats of the players that we had that received surgery prior to the draft that made it the MLB and compare them to those that did not have surgery. How do their career stats compare to those that did not have surgery prior to the draft?
+- Note: this is simply looking at players that had surgery prior to the draft and those that did not. The "did not" category includes players that had surgery later on. 
+
+```{r}
+pitchers_debut %>%
+  mutate(b4draft = case_when(surgery_time_binary == "before draft" ~ "b4 draft", 
+                             TRUE ~ "not b4 draft")) %>%
+  group_by(b4draft) %>%
+  filter(ERA < 100) %>% #removes single pitcher with an ERA of Inf
+  summarize(mean_IP = round(mean(IP)), 
+            mean_whip = round(mean(WHIP, na.rm=TRUE), 2), 
+            mean_WAR = round(mean(WAR, na.rm=TRUE), 1), 
+            mean_ASG = round(mean(ASG, na.rm=TRUE), 2), 
+            mean_ERA = round(mean(ERA, na.rm=TRUE), 1), 
+            mean_G = round(mean(G, na.rm=TRUE), 1))
+```
+
+
