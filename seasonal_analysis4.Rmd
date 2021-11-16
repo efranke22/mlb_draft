@@ -1,0 +1,104 @@
+---
+title: "Seasonal Stats"
+author: "Erin Franke"
+date: "11/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+pitchers_complete <- read_rds("data/pitchers_complete.rds")
+seasonal <- read_excel("data/seasonPitcher.xls")
+pitchers_debut <- pitchers_complete %>%
+  filter(mlb_g == 1) %>%
+  mutate(starter = case_when(GS >= 1 ~ "starter", 
+                             TRUE ~ "reliever"), 
+         draft_to_debut = time_length(difftime(Debut, apprx_draft_date), "years"))
+```
+
+Create an aging curve? 
+```{r}
+players <- seasonal %>%
+  group_by(Player) %>%
+  count()
+players_sample <- players[sample(nrow(players), 500), ]
+
+seasonal %>%
+  right_join(players_sample, by = "Player") %>%
+  filter(IP > 10) %>%
+  ggplot(aes(x = Age, y = OBP, group = Player)) +
+  geom_smooth(method = "lm", se = FALSE,
+              color = "gray", size = 0.5)
+```
+
+
+```{r}
+#filter pitchers debut data set to only include players that had surgery after debut
+surgeryPostDebut <- pitchers_debut %>%
+  filter(surgery_time == "after debut") %>%
+  rename(draftYear = year, 
+         debutAge = Age, 
+         careerERA = ERA, 
+         careerG = G, 
+         careerGS = GS, 
+         careerGF = GF, 
+         careerCG = CG, 
+         careerW = W, 
+         careerIP = IP, 
+         careerSV = SV, 
+         careerSO = SO, 
+         careerWHIP = WHIP) %>%
+  select(name_first_last, birth_date, hs_draftee, Debut, round, debutAge, draftYear, pick, From, To, Yrs, ASG, WAR, careerERA, careerG, careerGS, careerGF, careerCG, careerW, careerIP, careerSV, careerSV, careerSO, careerWHIP, surgery_date, tj_surgeon, surgery_age, apprx_draft_date, surgery_time)
+
+#get seasonal stats only for players that had surgery
+surgery_seasonal <- surgeryPostDebut %>%
+  full_join(seasonal, by = c("name_first_last" = "Player"))%>%
+  filter(!is.na(surgery_time)) %>%
+  mutate(surgeryYear = year(surgery_date), 
+         statsTime = case_when(Year <= surgeryYear ~ "before", 
+                               Year > surgeryYear ~ "after"))
+
+#put data in format to compare seasonal stats before and after player's surgery
+stats_b4after_surgery <- surgery_seasonal %>%
+  group_by(name_first_last, statsTime) %>%
+  summarize(meanSO = mean(SO), meanG = mean(G), meanGS = mean(GS), meanW = mean(W), meanL = mean(L), meanWL = mean(`W-L%`), meanSV = mean(SV), meanIP = mean(IP), meanERA = mean(ERA), meanFIP = mean(FIP), meanK = mean(`K%`), meanBB = mean(`BB%`), meanERAplus = mean(`ERA+`), meanBAbip = mean(BAbip), meanOBP = mean(OBP), meanSLG = mean(SLG), meanOPS = mean(OPS))
+
+obp_beforeAfter <- stats_b4after_surgery %>%
+  pivot_wider(id_cols = name_first_last, names_from = statsTime, values_from = meanOBP) %>%
+  select(-`NA`)
+
+obp_beforeAfter %>%
+  filter(!is.na(after), !is.na(before)) %>%
+  ggplot(aes(x=before, y = after))+
+  geom_point()+
+  geom_abline(aes(intercept = 0, slope = 1),
+              color = "blue")
+```
+
+When does surgery typically happen in a player's career?
+```{r}
+careerSurgTime <- surgery_seasonal %>%
+  group_by(name_first_last, statsTime) %>%
+  count() %>%
+  pivot_wider(id_cols = name_first_last, names_from = statsTime, values_from = n) %>%
+  select(-`NA`)
+
+careerSurgTime$after <- replace_na(careerSurgTime$after, 0)
+careerSurgTime$before <- replace_na(careerSurgTime$before, 0)
+
+careerSurgTime <- careerSurgTime %>%
+  mutate(career_length = before + after) %>%
+  mutate(prop = round(before/(before+after), 2))
+
+careerSurgTime %>%
+  ggplot(aes(x=prop))+
+  geom_boxplot()+
+  theme_classic()
+```
+

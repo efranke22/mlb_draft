@@ -74,7 +74,7 @@ pitchers_complete %>%
         plot.title = element_text(size=10))
 ```
 
-Looking at the mean draft round for players that did not have surgery, and then comparing the draft round for players that had surgery before and after the draft. 
+Looking at the mean draft round for players that did not have surgery, and then comparing the draft round for players that had surgery before and after the draft. Players that had surgery before the draft are slightly penalized in comparison to those that had it before the draft.
 ```{r}
 pitchers_complete %>%
   mutate(round = as.numeric(round)) %>%
@@ -104,3 +104,23 @@ pitchers_complete %>%
  scale_y_continuous(expand = c(0,0))
 ```
 
+Stratified by round: compare surgery/debut results in each of first 10 rounds
+Ensures we are comparing similar level prospects 
+Best comparison between the never surgery and after draft surgery -at the time of the draft, these two groups were essentially identical
+
+```{r}
+pitchers_complete %>%
+   filter(surgery_time != "after debut", surgery_time_binary %in% c("after draft", "no surgery"), round %in% c("1", "2", "3", "4", "5")) %>%
+  mutate(had_surgery = as.factor(had_surgery), 
+         had_surgery = recode(had_surgery, "0"="no surgery", "1" = "surgery")) %>%
+  group_by(mlb_g, had_surgery, surgery_time_binary)%>%
+  count() %>%
+  group_by(surgery_time_binary) %>%
+  summarize(n, mlb_g, surgery_time_binary, prop = n/sum(n))
+  
+  
+  
+
+```
+
+When we only look at the top 5 rounds, we are restricting ourselves to only good players, therefore explanation 3 is no longer valid. 

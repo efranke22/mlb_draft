@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 
 ```{r}
 library(tidyverse)
+library(lubridate)
 pitchers_complete <- read_rds("data/pitchers_complete.rds")
 ```
 
@@ -67,10 +68,10 @@ pitchers_debut %>%
   group_by(hs_draftee, starter) %>%
   filter(ERA < 100) %>% #removes single pitcher with an ERA of Inf
   summarize(mean_IP = round(mean(IP)), 
-            mean_whip = round(mean(WHIP, na.rm=TRUE), 2), 
+            median_whip = round(median(WHIP, na.rm=TRUE), 2), 
             mean_WAR = round(mean(WAR, na.rm=TRUE), 1), 
             mean_ASG = round(mean(ASG, na.rm=TRUE), 2), 
-            mean_ERA = round(mean(ERA, na.rm=TRUE), 1), 
+            median_ERA = round(median(ERA, na.rm=TRUE), 1), #due mean weighted by innings pitched
             mean_G = round(mean(G, na.rm=TRUE), 1))
 ```
 
@@ -89,9 +90,14 @@ pitchers_debut %>%
   geom_density(alpha = 0.5)+
   theme_classic()+
   labs(x="years between draft and debut", y="", fill = "HS draftee")
+
+pitchers_debut %>%
+  group_by(hs_draftee) %>%
+  summarize(mean(Age))
 ```
 
 ### Looking a little at Tommy John surgery within a HS/college lense
+
 In this bigger gap of time for players that do debut, do Tommy John surgeries happen at a higher rate? From the table below, we learn that:
   - For HS draftees, we learn it is very rare of TJ surgery to happen before being drafted. Only 4% of players that got surgery and debuted had this happen. This is more common for college draftees at 19%. 
   - Surgery happens between draft and debut at a higher rate in HS draftees than college draftees (given surgery occurs at some point and the player debuts). This makes sense given that this process typically takes longer for HS athletes than college ones.
@@ -124,4 +130,5 @@ pitchers_debut %>%
             mean_G = round(mean(G, na.rm=TRUE), 1))
 ```
 
+Next steps: get season by season data in, build aging curve, compare stats before and after Tommy John surgery. 
 
