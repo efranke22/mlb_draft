@@ -1,0 +1,344 @@
+---
+title: "Bayesian Statistics Checkpoint 3"
+author: "Erin Franke"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+
+#### Libraries and Data
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(bayesrules)
+library(tidyverse)
+library(rstanarm)
+library(broom.mixed)
+library(tidybayes)
+library(forcats)
+library(bayesplot)
+library(ggtext)
+
+`%!in%` <- Negate(`%in%`)
+```
+
+`pitchers_complete` is a data set on all players drafted since 1987, as well as career stats for players that reached the MLB. Also includes variables such as whether a player was drafted in high school, age at debut and debut date, draft date/round, and information related to whether the player had Tommy John surgery. 
+```{r}
+pitchers_complete <- read_rds("../data/pitchers_complete.rds")
+```
+
+The `seasonal` dataset gives seasonal statistics for all pitcher seasons between 1987-2021. 
+```{r}
+seasonal <- read_excel("../data/seasonPitcher.xls")
+```
+
+The `pitchers_debut` dataset it built from `pitchers_complete`, and filters for only players that reached the major leagues. 
+```{r}
+pitchers_debut <- pitchers_complete %>%
+  filter(mlb_g == 1) %>%
+  mutate(starter = case_when(GS >= 1 ~ "starter", 
+                             TRUE ~ "reliever"), 
+         draft_to_debut = time_length(difftime(Debut, apprx_draft_date), "years"))
+```
+
+The `seasonal_surgery_comp` dataset will be used most. It combines season level stats for players that had surgery with information from `pitchers_debut`. 
+```{r}
+#filter pitchers debut data set to only include players that had surgery after debut
+surgeryDebut <- pitchers_debut %>%
+  filter(surgery_time %in% c("after debut", "before draft date, player debuts", "between draft/debut")) %>%
+  rename(draftYear = year, 
+         debutAge = Age, 
+         careerERA = ERA, 
+         careerG = G, 
+         careerGS = GS, 
+         careerGF = GF, 
+         careerCG = CG, 
+         careerW = W, 
+         careerIP = IP, 
+         careerSV = SV, 
+         careerSO = SO, 
+         careerWHIP = WHIP) %>%
+  select(name_first_last, birth_date, hs_draftee, Debut, round, debutAge, draftYear, pick, From, To, Yrs, ASG, WAR, careerERA, careerG, careerGS, careerGF, careerCG, careerW, careerIP, careerSV, careerSV, careerSO, careerWHIP, surgery_date, apprx_draft_date) %>%
+  group_by(name_first_last) %>%
+  arrange(surgery_date) %>%
+  mutate(surgery_number = paste0("Surgery ", row_number())) %>%
+  pivot_wider(id_cols = c(name_first_last:careerWHIP,apprx_draft_date), names_from = surgery_number, values_from = surgery_date) %>%
+  filter(name_first_last %!in% c("Scott Baker", "Steve Sparks", "Scott Lewis", "Chris Carpenter", "Justin Miller")) %>%
+  mutate(surgery1time = case_when(`Surgery 1` >= apprx_draft_date & `Surgery 1` < Debut ~ "between draft and debut", 
+                                  `Surgery 1` < apprx_draft_date ~ "before draft", 
+                                  `Surgery 1` >= Debut ~ "after debut", 
+                                  TRUE ~ "help!"))
+
+#get seasonal stats only for players that had surgery
+surgery_seasonal <- seasonal %>%
+  filter(Player %in% surgeryDebut$name_first_last) %>%
+  group_by(Player, Year) %>%
+  mutate(nteam = n()) #shows how many teams they played on in a season
+  
+#filter for cases when a player played on two teams in a single season. We need to combine these rows. 
+surgery_seasonal_2teams <- surgery_seasonal%>%
+  filter(nteam == 2) %>%
+  group_by(Player, Year) %>%
+  summarize(`ERA+` = weighted.mean(`ERA+`, w=IP), BA = weighted.mean(BA, w=IP), OBP = weighted.mean(OBP, w=IP), SLG = weighted.mean(SLG, w=IP), OPS = weighted.mean(OPS, w=IP), `OPS+` = weighted.mean(`OPS+`, w=IP), SO = sum(SO), Age = mean(Age), G = sum(G), GS = sum(GS), CG = sum(CG), SHO = sum(SHO), GF = sum(GF), W = sum(W), L = sum(L), `W-L%` = 1, SV = sum(SV), IP = sum(IP), H = sum(H), R = sum(R), ER = sum(ER), BB = sum(BB), ERA = 1, `K%` = 1, `BB%` = 1, HR = sum(HR), BF = sum(BF), AB = sum(AB), `2B` = sum(`2B`), `3B` = sum(`3B`), `IBB` = sum(`IBB`), HBP = sum(HBP), SH = sum(SH), SF = sum(SF), GDP = sum(GDP), SB = sum(SB), CS = sum(CS), PO = sum(PO), BK = sum(BK), WP = sum(WP),Pit = sum(Pit), Str = sum(Str)) %>%
+  distinct() %>%
+  mutate(`W-L%` = round(W/(W+L), 2), 
+         ERA = round((9*ER)/IP, 2), 
+         `K%` = round(SO/AB, 2), 
+         `BB%` = round(BB/AB, 2)) %>%
+  mutate(Tm = "2teams", Lg = "NL/AL")
+
+#filter for seasons where a player only played on one team that season. Order the columns so they are in the same order as the new 2 team data
+surgery_seasonal_1team = surgery_seasonal %>%
+  filter(nteam == 1) %>%
+  select(Player, Year, `ERA+`, BA, OBP, SLG, OPS, `OPS+`, SO, Age, G, GS, CG, SHO, GF, W, L, `W-L%`, SV, IP, H, R, ER, BB, ERA, `K%`, `BB%`, HR, BF, AB, `2B`, `3B`, IBB, HBP, SH, SF, GDP, SB, CS, PO, BK, WP, Pit, Str, Tm, Lg)
+
+#row bind the one team and two team data
+surgery_seasonal_joined = rbind(surgery_seasonal_2teams, surgery_seasonal_1team)
+
+#join this with the surgeryPostDebut data to include career stats, draft information, birthdate, surgery info, and other crucial information. 
+surgery_seasonal_complete<- surgery_seasonal_joined %>%
+  left_join(surgeryDebut, by = c("Player" = "name_first_last"))  %>%
+  mutate(surgery1Year = year(`Surgery 1`), 
+         statsTime = case_when(Year <= surgery1Year ~ "before", 
+                               Year > surgery1Year ~ "after"))
+```
+
+Do the same thing, except for players that did not have surgery: get rid of those players that had 2 names
+```{r}
+noSurgDebut <- pitchers_debut %>%
+  filter(surgery_time == "no surgery") %>%
+  rename(draftYear = year, 
+         debutAge = Age, 
+         careerERA = ERA, 
+         careerG = G, 
+         careerGS = GS, 
+         careerGF = GF, 
+         careerCG = CG, 
+         careerW = W, 
+         careerIP = IP, 
+         careerSV = SV, 
+         careerSO = SO, 
+         careerWHIP = WHIP) %>%
+  select(name_first_last, birth_date, hs_draftee, Debut, round, debutAge, draftYear, pick, From, To, Yrs, ASG, WAR, careerERA, careerG, careerGS, careerGF, careerCG, careerW, careerIP, careerSV, careerSV, careerSO, careerWHIP, surgery_date, apprx_draft_date, surgery_time) %>%
+  filter(name_first_last %!in% c("Austin Adams", "Bobby Jones", "Chris George", "Dan Smith", "Scott Taylor"))
+
+#get seasonal stats only for players that did not have surgery
+noSurg_seasonal <- seasonal %>%
+  filter(Player %in% noSurgDebut$name_first_last) %>%
+  group_by(Player, Year) %>%
+  mutate(nteam = n()) #shows how many teams they played on in a season
+
+#filter for cases when a player played on 2-3 teams in a single season. We need to combine these rows. 
+noSurg_seasonal_2teams <- noSurg_seasonal %>%
+  filter(nteam >=2) %>%
+  group_by(Player, Year) %>%
+  summarize(`ERA+` = weighted.mean(`ERA+`, w=IP), BA = weighted.mean(BA, w=IP), OBP = weighted.mean(OBP, w=IP), SLG = weighted.mean(SLG, w=IP), OPS = weighted.mean(OPS, w=IP), `OPS+` = weighted.mean(`OPS+`, w=IP), SO = sum(SO), Age = mean(Age), G = sum(G), GS = sum(GS), CG = sum(CG), SHO = sum(SHO), GF = sum(GF), W = sum(W), L = sum(L), `W-L%` = 1, SV = sum(SV), IP = sum(IP), H = sum(H), R = sum(R), ER = sum(ER), BB = sum(BB), ERA = 1, `K%` = 1, `BB%` = 1, HR = sum(HR), BF = sum(BF), AB = sum(AB), `2B` = sum(`2B`), `3B` = sum(`3B`), `IBB` = sum(`IBB`), HBP = sum(HBP), SH = sum(SH), SF = sum(SF), GDP = sum(GDP), SB = sum(SB), CS = sum(CS), PO = sum(PO), BK = sum(BK), WP = sum(WP),Pit = sum(Pit), Str = sum(Str)) %>%
+  distinct() %>%
+  mutate(`W-L%` = round(W/(W+L), 2), 
+         ERA = round((9*ER)/IP, 2), 
+         `K%` = round(SO/AB, 2), 
+         `BB%` = round(BB/AB, 2)) %>%
+  mutate(Tm = "2teams", Lg = "NL/AL")
+
+#filter for seasons where a player only played on one team that season. Order the columns so they are in the same order as the new 2 team data
+noSurg_seasonal_1team = noSurg_seasonal %>%
+  filter(nteam == 1) %>%
+  select(Player, Year, `ERA+`, BA, OBP, SLG, OPS, `OPS+`, SO, Age, G, GS, CG, SHO, GF, W, L, `W-L%`, SV, IP, H, R, ER, BB, ERA, `K%`, `BB%`, HR, BF, AB, `2B`, `3B`, IBB, HBP, SH, SF, GDP, SB, CS, PO, BK, WP, Pit, Str, Tm, Lg)
+
+#row bind the one team and two team data
+noSurg_seasonal_joined = rbind(noSurg_seasonal_2teams, noSurg_seasonal_1team)
+
+#join this with the noSurgDebut data to include career stats, draft information, birthdate, surgery info, and other crucial information. 
+noSurg_seasonal_complete <- noSurg_seasonal_joined %>%
+  left_join(noSurgDebut, by = c("Player" = "name_first_last")) %>%
+  select(-surgery_date, -surgery_time)
+```
+
+Combine data frames together **finally**
+```{r}
+seasonal_complete <- bind_rows(surgery_seasonal_complete, noSurg_seasonal_complete) %>%
+  arrange(desc(Debut))
+```
+
+
+### Part 1: Introducing the Data  
+
+  The data for this analysis were collected from multiple sources. I collected information on each player's draft round and year from a GitHub source and checked these data for accuracy. I then joined these data by player name and birth date with career level pitcher statistics and debut information from Baseball Reference. Tommy John surgery information was obtained from MLB Reports, and finally individual player data on the seasonal level were downloaded from Stathead Baseball. The diversity of the downloaded data allowed me to create a database with a wide variety of variables, and enables the comparison between players as well as the analysis of a player's development over the course of their career.
+
+Here is basic information on the variables that I plan to use most in this study:
+```{r}
+codebook = data.frame(variable = c("Player", "Year", "Age", "hs_draftee", "birth_date", "Debut", "round", "surgery1Year", "statsTime", "surgery1time", "ERA", "ERA+", "G", "GS", "IP", "SV", "careerWHIP"), 
+                      meaning = c("name of pitcher", "year of MLB season", "player age during season", "whether the player was drafted in high school", "player date of birth", "player MLB debut data", "the player's draft round", "the year the player had their first Tommy John surgery while in the MLB", "whether the stats for this season come before or after the player's first surgery", "whether the player's first surgery came before draft, between draft & debut, or after debut", "earned run average", "adjusts a pitcher's ERA according to the pitcher's ballpark and the ERA of the pitcher's league", "games played", "games started", "innings pitched", "saves", "career average number of walks + hits per inning pitched"))
+codebook
+```
+  
+### Part 2: Data summaries 
+
+While many variables will be used in this analysis, here is a brief snapshot of the ones that will be used the most. 
+```{r}
+seasonal_complete %>%
+  select(Player, Year, Age, hs_draftee, birth_date, Debut, round, surgery1Year, statsTime, surgery1time, ERA, `ERA+`, G, GS, IP, SV, careerWHIP) %>%
+  arrange(desc(Player)) %>%
+  head()
+```
+  
+Further understanding the data
+```{r}
+#variable names
+names(seasonal_complete)
+
+#data dimensions
+dim(seasonal_complete)
+
+#overall summary
+summary(seasonal_complete)
+```
+
+### Part 3: Data viz
+
+First of all, we should understand the age distribution of pitchers in the MLB.  
+```{r}
+seasonal_complete %>%
+  ggplot(aes(x=Age))+
+  geom_density(fill = "lightcyan3")+
+  theme_classic()+
+  labs(title = "Age distribution of pitchers in the MLB", x="", y="")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 11))
+```
+
+Second, how does career length differ between players that had a surgery before their debut and players that did not receive surgery? We will remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. 
+```{r}
+seasonal_complete %>%
+  mutate(surgery_bin = case_when(surgery1time %in% c("between draft and debut", "before draft") ~ "before debut",
+                                 surgery1time == "after debut" ~ "after debut",
+                                 TRUE ~ "no surgery")) %>%
+  filter(surgery_bin %in% c("no surgery", "before debut")) %>%
+  group_by(Player, surgery_bin) %>%
+  summarize(n = n(), lastyear = max(Year)) %>%
+  filter(lastyear < 2020) %>%
+  ggplot(aes(x=n, fill=surgery_bin))+
+  geom_density(alpha = 0.5)+
+  theme_classic()+
+  scale_fill_manual(values = c("deepskyblue4", "sienna2"))+
+  labs(x="", y="", title = "MLB career length (seasons) averages a similar length for players that <strong><span style='color:sienna2'> did not have</span></strong></b>", subtitle = "<strong><span style='color:sienna2'> Tommy John surgery before debuting </span></strong></b> in comparison to <strong><span style='color:deepskyblue4'>those that did </span></strong></b>")+
+  theme(plot.title = element_markdown(size = 10, family = "mono"),
+        plot.subtitle = element_markdown(size = 10, family = "mono"), 
+        plot.title.position = "plot", 
+        legend.position = "none")
+  
+```
+
+Next, for pitchers that receive Tommy John surgery, at what age receive their first Tommy John surgery?
+```{r}
+seasonal_complete %>%
+  filter(`Surgery 1` > "1900-01-01") %>%
+  mutate(surgery1age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
+  ggplot(aes(x=surgery1age))+
+  geom_boxplot(fill = "lightcyan2")+
+  theme_classic()+
+  labs(title = "Age of first Tommy John Surgery for MLB players that debut", x="")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono"), 
+        axis.text.y = element_blank())
+```
+
+A lot of this analysis will also focus on the trajectory of a player overtime. The ideal career stats to assess a player are their WHIP (walks + hits divided by innings pitched) as well as WAR, which takes into account how much a player is playing per season and how effective they are. Unfortunately, WAR is not included in the seasonal data, but we can calculate WHIP to measure a player's effectiveness and use innings pitched to measure their how much they are able to pitch. First, look at the career trajectory for all players at once:
+```{r}
+seasonal_complete <- seasonal_complete %>%
+  mutate(WHIP = round((BB+H)/IP,2))
+
+seasonal_complete %>%
+  filter(IP > 20) %>%
+  ggplot(aes(x=Age, y=WHIP))+
+  geom_point()+
+  geom_smooth()+
+  theme_classic()+
+  labs(title = "MLB pitcher seasonal WHIP by age", subtitle = "Only seasons with 20+ IP included")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono"), 
+        plot.subtitle = element_text(family = "mono", size = 10))
+```
+
+While this shows a steady and declining WHIP as a player ages, this is likely not true. Pitchers playing at 40 years of age are likely going to be exceptional players, and those that struggled in their mid thirties after having surgery will retire. It is more ideal that we look at the age versus WHIP trend for a particular player. The following plot takes a sample of 10 players and smooths their seasonal WHIP over the course of their career. 
+```{r}
+players <- seasonal_complete %>%
+  group_by(Player) %>%
+  summarize(n = n(), IP) %>%
+  filter(IP >20)
+
+set.seed(1119)  
+players_sample <- players[sample(nrow(players), 10),]
+
+seasonal_complete %>%
+  filter(Player %in% players_sample$Player) %>%
+  ggplot(aes(x = Age, y = `WHIP`, group = as.factor(Player))) +
+  geom_smooth(method = "loess", se = FALSE,
+              color = "gray", size = 0.5)+
+  theme_classic()+
+  labs(title = "Seasonal WHIP over MLB career for 10 players")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono"), 
+        plot.subtitle = element_text(family = "mono", size = 10))
+```
+
+The relationship between Age and WHIP is definitely complicated. To investigate this more, I might want to standardize the WHIPS around the season MLB average because the typical MLB WHIP changes from season to season. I should also look at other factors contributing to changes in WHIP, such as before and after Tommy John Surgery, compare WHIPs for starters versus relievers, and more. 
+
+
+### Part 4: Model Building
+
+My first Bayesian model with model will be a hierarchical model of `WHIP` with `Player` as the grouping variable. It will not include other predictors. \
+The notation `WHIP ~ (1 | Player)` indicates that we’re modeling WHIP $Y_{ij}$ without any predictors, where `Player`  is a grouping variable. 
+```{r}
+seasonal_complete_filtered <- seasonal_complete%>%
+  filter(WHIP <=100, !is.na(WHIP)) %>%
+  mutate(Player = fct_reorder(Player, WHIP, .fun = 'mean'))
+
+hierarchicalmod1 <- stan_glmer(
+  WHIP ~ (1 | Player), data = seasonal_complete_filtered,
+  family = gaussian,
+  chains = 4, iter = 5000*2, seed = 84735, refresh = 0)
+```
+
+Simulate and plot the posterior predictive models for each player. 
+```{r}
+player_means <- seasonal_complete_filtered %>%
+  group_by(Player) %>%
+  summarize(seasons = n(), WHIP = mean(WHIP)) %>%
+  mutate(Player = fct_reorder(Player, WHIP)) %>%
+  arrange(desc(WHIP))
+
+set.seed(84735)
+predictions_hierarchical <-  posterior_predict(
+  hierarchicalmod1, newdata = player_means[1:10,])
+
+# Plot posterior prediction intervals for each player
+ppc_intervals(
+    player_means$WHIP[1:10],
+    yrep = predictions_hierarchical,
+    prob_outer = 0.80) +
+  ggplot2::scale_x_continuous(
+    labels = player_means$Player,
+    breaks = 1:nrow(player_means)) +
+    xaxis_text(angle = 90, hjust = 1)
+```
+
+### Part 5: Next steps 
+
+This checkpoint took a long of data cleaning and joining. In the future, I will be focusing more on additional visualizations and analysis.
+
+Future steps include potentially a shiny app. I think it would be really interesting to have a shiny app where you can select multiple players at once and compare a statistic over choice over the course of their careers. I would hope this app could also add in some kind of marker for when a player had surgery in their career. 
+
+I will also work more on modeling. I need to review hierarchical models a bit more and get fully comfortable with their syntax and really understand what all I can do with them first.
+
+### Part 6: Participation 
+
+Hayley and I have been checking in during class. We have not yet provided feedback but I think after break we will both have more work down and can exchange work/discuss more then. 
+
+

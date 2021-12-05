@@ -1,0 +1,539 @@
+---
+title: "Bayes Checkpoint 4"
+author: "Erin Franke"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+### Libraries and data 
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(bayesrules)
+library(tidyverse)
+library(rstanarm)
+library(broom.mixed)
+library(tidybayes)
+library(forcats)
+library(bayesplot)
+library(ggtext)
+library(janitor)
+library(gt)
+library(tidymodels)
+library(probably)
+library(vip)
+library(ggmosaic)
+tidymodels_prefer()
+`%!in%` <- Negate(`%in%`)
+
+seasonal_complete <- read_csv("../data/seasonal_complete.csv")
+```
+
+### Introduction to the topic 
+
+A pitcher's success can vary dramatically over the course of their major league career. 2015 Cy Young Jake Arrieta had tremendous success in the middle of his career, but began his career with the Orioles and pitched at levels far below league average. In more recent seasons he has also struggled. A good measure of this trend ERA+, which takes a player's earned run average and normalizes across the entire league. An ERA+ of 100 represents league average, while one of 150 would represent 50% better than league average. As seen in the following graph, while many still think of Arrieta as legendary, the quality of his pitching has been slowly declining since his Cy Young season it is clear his value to a team is not the same as it once was. 
+
+```{r}
+seasonal_complete %>%
+  filter(Player == "Jake Arrieta") %>%
+  ggplot(aes(x=Year, y=`ERA+`))+
+  geom_point()+
+  theme_classic()+
+  labs(x="", title = "Jake Arrieta's ERA+ over his career")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 12))
+```
+
+Jake Arrieta is just one example of the type of trajectory a player's career may take. Drew Smyly has had a lot of variability in his success as a pitcher, as seen below. While his first four seasons appeared quite strong, Smyly performed below average 2016 and 2019 and since has had a little more success.
+```{r}
+seasonal_complete %>%
+  filter(Player == "Drew Smyly") %>%
+  ggplot(aes(x=Year, y=`ERA+`))+
+  geom_point()+
+  theme_classic()+
+  labs(x="", title = "Drew Smyly's ERA+ over his career")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 12))
+```
+
+What might contribute to these pitching trends? Notice Smyly's missing stats in 2017 and 2018 - during this period, he underwent Tommy John surgery. Tommy John surgery is a major surgery that repairs a torn ulnar collateral ligament in the elbow by replacing it with a tendon from another part of a player's body. Recovery typically takes a year, but can take up to 2. \
+
+In light of just a couple of these trends, this analysis will seek to understand how the trajectory of a pitcher's MLB success changes over the course of his career. I will measure success in two forms: by WHIP to assess skill as well as innings pitched to measure longevity. In investigating this trajectory, we will especially focus on the impact of undergoing Tommy John surgery and try to weight the risk of signing a player that has had this surgery. 
+
+### Data
+
+The data for this analysis were collected from multiple sources. I collected information on each player's draft round and year from a GitHub source and checked these data for accuracy. I then joined these data by player name and birth date with career level pitcher statistics and debut information from Baseball Reference. Tommy John surgery information was obtained from MLB Reports, and finally individual player data on the seasonal level were downloaded from Stathead Baseball. The diversity of the downloaded data allowed me to create a database with a wide variety of variables, and enables the comparison between players as well as the analysis of a player's development over the course of their career. 
+
+The variables that will be used most in this study are shown in the code below: 
+```{r}
+codebook = data.frame(Variable = c("Player", "Year", "Age", "hs_draftee", "birth_date", "Debut", "round", "surgery1Year", "statsTime", "surgery1time", "ERA+", "G", "GS", "IP", "WHIP", "SO"), 
+                      Meaning = c("name of pitcher", "year of MLB season", "player age during season", "whether the player was drafted in high school", "player date of birth", "player MLB debut data", "the player's draft round", "the year the player had their first Tommy John surgery while in the MLB", "whether the stats for this season come before or after the player's first surgery", "whether the player's first surgery came before draft, between draft & debut, or after debut", "adjusts a pitcher's ERA according to the pitcher's ballpark and the ERA of the pitcher's league", "games played", "games started", "innings pitched", "number of walks + hits per inning pitched", "strikeouts"))
+codebook %>%
+  gt() %>%
+  tab_header(
+    title = md("**Codebook**")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "honeydew"),
+    locations = cells_body(
+      rows = Variable %in% c("Player", "Age", "birth_date", "round", "statsTime", "ERA+", "GS", "WHIP"))) %>%
+  tab_style(
+    style = cell_fill(color = "lightcyan3"),
+    locations = cells_body(
+      rows = Variable %!in% c("Player", "Age", "birth_date", "round", "statsTime", "ERA+", "GS", "WHIP"))) %>%
+  tab_options(
+    table.font.size = px(13L)
+  )
+```
+
+### Build a prior understanding
+
+In understanding career longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are between their low twenties and thirties. 
+```{r}
+seasonal_complete %>%
+  filter(Year == 2021) %>%
+  ggplot(aes(x=Age))+
+  geom_density(fill = "lightcyan3")+
+  theme_classic()+
+  labs(title = "Age distribution of pitchers in the MLB", x="", y="")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 11))
+```
+
+In trying to understand the impact of having Tommy John surgery on a player's career, we should also seek to understand if there are differences in career length for players that receive the surgery. To do this, we compare the career length in seasons of players that did not have surgery at any point in their career to those that had surgery between their draft and debut date. We remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. Additionally, we do not include players that had surgery before being drafted as scouts deemed them worthy enough to be drafted despite their surgery. When looking at the graph, there do not seem to be any significant differences.
+```{r}
+seasonal_complete %>%
+  filter(surgery1time %!in% c("after debut", "before draft")) %>%
+  mutate(surgery1time = case_when(surgery1time == "between draft and debut" ~ "between draft and debut", 
+                                  TRUE ~ "no surgery")) %>%
+  group_by(Player, surgery1time) %>%
+  summarize(n = n(), lastyear = max(Year)) %>%
+  filter(lastyear < 2020) %>%
+  ggplot(aes(x=n, fill=surgery1time))+
+  geom_density(alpha = 0.5)+
+  theme_classic()+
+  scale_fill_manual(values = c("deepskyblue4", "sienna2"))+
+  labs(x="", y="", title = "MLB career length (seasons) averages a similar length for players that <strong><span style='color:sienna2'> did not have</span></strong></b>", subtitle = "<strong><span style='color:sienna2'> Tommy John surgery before debuting </span></strong></b> in comparison to <strong><span style='color:deepskyblue4'>those that did </span></strong></b>")+
+  theme(plot.title = element_markdown(size = 10, family = "mono"),
+        plot.subtitle = element_markdown(size = 10, family = "mono"), 
+        plot.title.position = "plot",
+        legend.position = "none")
+```
+
+It is also a good idea to look into how statistics might compare for players before and after their Tommy John surgeries. For players that have their first Tommy John surgery post MLB-debut, we notice they tend to average more innings following the surgery if it is done while they are younger, but players that have this surgery done later in their careeer almost always average fewer innings after it. 
+```{r}
+diffIP <- seasonal_complete %>%
+  filter(surgery1time == "after debut") %>%
+  group_by(Player, statsTime) %>%
+  summarize(avg_IP = round(mean(IP),2), 
+            surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
+  select(Player, surgery_age, statsTime, avg_IP) %>%
+  distinct() %>%
+  pivot_wider(id_cols = Player:surgery_age, names_from = statsTime, values_from = avg_IP) 
+
+diffIP$after <- replace_na(diffIP$after, 0)
+
+diffIP %>%
+  mutate(difference = after - before, 
+         leaveMLB = case_when(after == 0 ~ "leave MLB", 
+                              TRUE ~ "continue playing")) %>%
+  ggplot(aes(x=surgery_age, y= difference, color = leaveMLB))+
+  geom_point()+
+  theme_classic()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") %>%
+  labs(title = "As pitchers age, they tend to average fewer seasonal innings after having Tommy John surgery than prior to it", subtitle = "Players that leave the MLB completely are shown in<strong><span style='color:red'> red</span></strong></b>", x = "surgery age", y = "")+
+  theme(plot.title = element_markdown(size = 10, family = "mono"),
+        plot.subtitle = element_markdown(size = 9, family = "mono"),
+        plot.title.position = "plot", 
+        axis.title.x = element_markdown(size = 10, family = "mono"), 
+        legend.position = "none")+
+  scale_color_manual(values = c("navy", "red"))
+```
+
+We can do a similar thing and look at how a pitcher's success (perhaps measured by WHIP) might change for those that do come back and play in the MLB following their surgery. 
+```{r}
+diffWHIP <- seasonal_complete %>%
+  filter(surgery1time == "after debut", 
+         IP > 5) %>%
+  group_by(Player, statsTime) %>%
+  summarize(avg_WHIP = round(mean(WHIP),2), 
+            surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
+  select(Player, surgery_age, statsTime, avg_WHIP) %>%
+  distinct() %>%
+  pivot_wider(id_cols = Player:surgery_age, names_from = statsTime, values_from = avg_WHIP) 
+
+diffWHIP %>%
+  filter(!is.na(after)) %>%
+  mutate(difference = after - before) %>%
+  ggplot(aes(x=surgery_age, y= difference))+
+  geom_point()+
+  theme_classic()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") %>%
+  labs(title = "For players that return after surgery, there is great variability in whether they improve", subtitle = "or get worse", x = "surgery age", y = "difference in WHIP (negative = improvement)")+
+  theme(plot.title = element_markdown(size = 10, family = "mono"),
+        plot.subtitle = element_markdown(size = 10, family = "mono"),
+        plot.title.position = "plot", 
+        axis.title.y = element_markdown(size = 9, family = "mono"), 
+        axis.title.x = element_markdown(size = 10, family = "mono"))+
+  geom_smooth(se=FALSE)
+```
+
+### Model 1: Classification for if a player will play again 
+
+**For players that have their first Tommy John surgery following their debut, what is the likelihood they play again?**
+
+#### Get data ready 
+
+Filter for players that had their first surgery after debuting. Create an indicator variable for if the player plays following their surgery. 
+```{r}
+play_post_surgery <- seasonal_complete %>%
+  filter(surgery1time == "after debut", surgery1Year < 2020) %>%
+  group_by(Player) %>%
+  count(statsTime) %>%
+  pivot_wider(id_cols = Player, names_from = statsTime, values_from = n) %>%
+  mutate(played_after = case_when(is.na(after) == TRUE ~ 0, 
+                                  TRUE ~ 1))
+
+# 73.27% of players play following their surgery
+play_post_surgery %>% 
+  tabyl(played_after)
+```
+
+Join this data with `seasonal_complete` to get more information about these players. Currently, this data is not grouped by player. 
+```{r}
+seasonal_SurgPostdebut <- seasonal_complete %>%
+  filter(surgery1time == "after debut", surgery1Year < 2020) %>%
+  left_join(play_post_surgery, by = "Player")
+```
+
+Group the data by player and select the variables of interest. 
+```{r}
+stats <- seasonal_SurgPostdebut %>%
+  filter(statsTime == "before", WHIP < 100) %>%
+  group_by(Player) %>%
+  mutate(surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years"), 
+         games_started = sum(GS), 
+         games = sum(G), 
+         starter = case_when(games_started/games < 0.5 ~ 0, 
+                                TRUE ~ 1), 
+         totalIP = sum(IP),
+         kRate = sum(SO)/totalIP, 
+         totwalks = sum(BB), 
+         totH = sum(H), 
+         avgWHIP = (totwalks+totH)/totalIP) %>%
+  select(hs_draftee, played_after, surgery_age, starter, kRate, totalIP, avgWHIP) %>%
+  distinct()
+
+#get a sense of this data -  we have information on 318 players and 1282 seasons total
+head(stats)
+dim(stats)
+```
+
+#### Visual understanding
+
+```{r}
+stats %>%
+  mutate(starter = recode(starter, "0" = "reliever", "1" = "starter")) %>%
+  ggplot()+
+  geom_mosaic(aes(x = product(played_after,starter), fill = played_after))  +
+  labs(x = "", y = "", fill = 'Played after') + 
+  scale_fill_manual(values = c("steelblue", "lightblue")) + 
+  theme_classic()+
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank())
+```
+
+```{r}
+# there does not seem to be a strong relationship between innings pitched and if a player plays again
+stats %>%
+  mutate(IPgroup = case_when(totalIP <= 28 ~ "0-28", 
+                             totalIP > 28 & totalIP <= 97 ~ "29-97", 
+                             totalIP > 97 & totalIP <=213 ~ "97-213", 
+                             totalIP > 213 & totalIP <=442 ~ "213 - 442", 
+                             totalIP > 442 ~ "442+"), 
+         played_after = as.factor(played_after)) %>%
+  ggplot(aes(x=IPgroup, fill = played_after))+
+  geom_bar(position = "fill") +
+  theme_classic()
+
+# it seems slightly less likely to play again after aging, but not quite as much as one might expect
+stats$roundage = as.integer(stats$surgery_age)
+quantile(stats$roundage, 0.8)
+
+stats %>%
+  mutate(surgGroup = case_when(roundage <= 24 ~ "24 and under", 
+                             roundage %in% c(25, 26) ~ "25-26", 
+                             roundage == 27 ~ "27", 
+                             roundage %in% c(28, 29, 30) ~ "28-30", 
+                             roundage > 30 ~ "31+"), 
+         played_after = as.factor(played_after)) %>%
+  ggplot(aes(x=surgGroup, fill = played_after))+
+  geom_bar(position = "fill") +
+  theme_classic()+
+  labs(x= "")
+```
+
+#### Logistic regression model
+
+I will build a logistic regression model to predict if a player will play again after having surgery ($\pi$). In creating this model, I will consider the following predictors: \
+  - $X_1$, which represents if a player is a starter or a reliever \
+  - $X_2$, a continuous variable representing the total number of innings pitched by a player prior to their surgery \
+  - $X_3$, the player's average WHIP prior to their surgery \
+  - $X_4$, an indicator variable of if a player was a high school draftee 
+
+I will start this model with a weak prior on $\beta_{0c}$, which represents the probability of if a player will play again following their surgery. Based on data, about 73% of players played again following their surgery. I would estimate the true mean to fall somewhere between 0.6 and 0.85. Thus, I set the prior for $\beta_{0c} \sim N(1, 0.35^2)$. Thinking about this in meaningful terms, we estimate the odds of a player playing again after surgery to reasonably be between $(e^{1-2*0.35}, e^{1+2*0.35}) = (1.35, 5.47)$ and thus the probability to be between $(\frac{1.35}{1 + 1.35}, \frac{5.47}{5.47 + 1}\right) \approx (0.5744, 0.8455)$. I will utilize weakly informative priors for the other coefficients.  
+
+**Note: not sure why but prior summary does not seem to be giving me appropriate priors and only gave me 3 instead of 4**. 
+
+The model as a whole can be written as follows: 
+\begin{split}
+Y_i | \beta_0, \beta_1, \beta_2, \beta_3 & \sim Bern(\pi_i) \;\; \text{ with } \;\; \log\left(\frac{\pi_i}{1-\pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} +  \beta_3  X_{i3} + \beta_3  X_{i4} \\
+\beta_{0c} & \sim N(1, 0.35^2) \\
+\beta_1 & \sim N(0, 5.0209^2) \\
+\beta_2 & \sim N(0, 0.0059^2) \\
+\beta_3 & \sim N(0, 4.0813^2) \\
+\beta_4 & \sim N(0, 1). \\
+\end{split}
+
+```{r}
+stats$starter <- as.factor(stats$starter)
+played_after_mod <- stan_glm(played_after ~ starter + totalIP + avgWHIP + hs_draftee,
+                             data = stats, family = binomial,
+                             prior_intercept = normal(1, 0.35),
+                             prior = normal(0, 2.5, autoscale = TRUE),
+                             chains = 4, iter = 5000*2, seed = 84735)
+
+prior_summary(played_after_mod)
+```
+
+Looking at the tidy output of this model, I notice that the starter and high school draftee variables appear to be significant, and well as the innings pitched variable. They might be interpreted as follows: \
+
+When controlling for draftee status, innings pitched, and WHIP, we are 80% confident that the odds of playing again after having surgery are between $(e^{0.309}, e^{1.06}) = (1.36, 2.89)$ higher for starters than relievers. \
+When controlling for if a pitcher is a starter or reliever, innings pitched, and WHIP, we are 80% confident that the odds of playing again after having surgery are between $(e^{0.024}, e^{0.849}) = (1.024, 2.34)$ higher for high school draftees than college draftees. 
+
+When controlling for if a pitcher is a starter or reliever, draftee status, and WHIP, we are 80% confident that the odds of playing again after having surgery are between $(e^{0.0006057279*100}, e^{0.001930939*100}) = (1.06, 1.21)$ higher for every 100 innings pitched. 
+```{r}
+tidy(played_after_mod, effects = "fixed", conf.int = TRUE, conf.level = 0.80)
+```
+
+Evaluating the accuracy of this model with a cutoff of 0.7, the model's accuracy is 61.9% which balances the model's sensitivity and specificity pretty well. Unfortunately, this is lower than the no information rate (the fact that 73% of players in our model ended up playing again after the surgery). 
+```{r}
+set.seed(84735)
+cv_accuracy <- classification_summary_cv(
+  model = played_after_mod, data = stats, cutoff = 0.7, k = 10)
+cv_accuracy$cv
+```
+
+#### Also tried a random forest
+
+```{r}
+stats$played_after <- as.factor(stats$played_after)
+# Model Specification
+rf_spec <- rand_forest() %>%
+  set_engine(engine = 'ranger') %>% 
+  set_args(mtry = NULL, # size of random subset of variables; default is floor(sqrt(ncol(x)))
+           trees = 1000, # Number of trees
+           min_n = 2,
+           probability = FALSE, # FALSE: hard predictions
+           importance = 'impurity') %>% 
+  set_mode('classification') # change this for regression tree
+
+# Recipe
+data_rec <- recipe(played_after ~ hs_draftee + surgery_age + starter + kRate + totalIP + avgWHIP, data = stats)
+
+# Workflows
+data_wf_mtry3 <- workflow() %>%
+  add_model(rf_spec %>% set_args(mtry = 3)) %>%
+  add_recipe(data_rec)
+
+set.seed(124)
+data_fit_mtry3 <- fit(data_wf_mtry3, data = stats)
+
+rf_OOB_output <- function(fit_model, model_label, truth){
+    tibble(
+          .pred_class = fit_model %>% extract_fit_engine() %>% pluck('predictions'), #OOB predictions
+          class = truth,
+          model = model_label
+      )
+}
+
+#check out the function output
+data_rf_OOB_output <- rf_OOB_output(data_fit_mtry3,'mtry3', stats %>% pull(played_after))
+
+data_rf_OOB_output %>% 
+    group_by(model) %>%
+    accuracy(truth = class, estimate = .pred_class)
+
+rf_OOB_output(data_fit_mtry3,'mtry3', stats %>% pull(played_after)) %>%
+    conf_mat(truth = class, estimate= .pred_class)
+```
+
+Sensitivity: 212/(212+21) = 0.9098 \
+Specificity: 26/(26+59) = 0.3058 \
+Accuracy = (212 + 26)/(212+26+59+21) = 0.7484
+
+```{r}
+data_wf_mtry3 %>% 
+  update_model(rf_spec %>% set_args(importance = "permutation")) %>% #based on permutation
+  fit(data = stats) %>% 
+    extract_fit_engine() %>% 
+    vip(num_features = 30) + theme_classic()
+```
+
+The random forest was more accurate than the logistic regression model but not as easier to interpret. I am not sure I will want to use either of these models and will hold of on discussing the random forest for now. 
+
+### Model 2: Building on the WHIP model from checkpoint 3
+
+**Goal: understand if there are significant predictors of WHIP**
+
+Take a sample of 300 players and get their seasonal data
+```{r}
+players <- seasonal_complete %>%
+  group_by(Player) %>%
+  count()
+sample_rows <- sample(1:nrow(players), 800)
+player_sample <- players[sample_rows, ]
+
+seasonal_sample <- filter(seasonal_complete, Player %in% player_sample$Player)
+```
+
+First, is the variability in WHIP roughly normal? The assumption seems valid granted that we filter for seasons with over 5 IP. 
+```{r}
+#check it out using all the data - skewed
+seasonal_complete %>%
+  ggplot(aes(x=WHIP))+
+  geom_density(fill = "lightblue")+
+  theme_classic()
+
+#check it out once a player has pitched over 5 innings in a season. This eliminates the very high WHIPS that are due to players only pitching a couple of innings 
+seasonal_complete %>%
+  filter(IP > 5) %>%
+  ggplot(aes(x=WHIP))+
+  geom_density(fill = "lightblue")+
+  theme_classic()
+
+#use sample to look at variability within individual players
+seasonal_sample %>%
+  arrange(Player) %>%
+  filter(IP > 5) %>%
+  #head(101) %>%
+  ggplot(aes(x=WHIP, group = Player))+
+  geom_density()+
+  theme_classic()
+```
+
+Additionally, show the need for a hierarchical model. Without grouping the data by player, there does not appear to be a relationship between age and WHIP. 
+```{r}
+seasonal_complete %>%
+  filter(IP > 5) %>%
+  ggplot(aes(x=Age, y= WHIP))+
+  geom_point()+
+  geom_smooth()
+```
+
+We can sample one hundred players and plot their trends in WHIP across their age. 
+```{r}
+seasonal_sample %>%
+  mutate(player_id = as.numeric(factor(Player))) %>%
+  filter(WHIP < 5, player_id < 100) %>%
+  ggplot(aes(x=Age, y=WHIP, group = Player))+
+  geom_smooth(method = "lm", se = FALSE, size = 0.5)
+```
+
+Now, build a model that groups the data. First, create indicators for if the player is a starter in each specific season (player started at least half the games he played in) and if the player has had a Tommy John surgery prior to this season. 
+```{r}
+seasonal_sample_filtered <- seasonal_sample %>%
+  filter(IP > 5, !is.na(WHIP)) %>%
+  mutate(Player = fct_reorder(Player, WHIP, .fun = 'mean'), 
+         starter = case_when(GS/G < 0.5 ~ 0, 
+                                TRUE ~ 1), 
+         had_surgery = case_when(statsTime == "after" ~ 1, 
+                                 TRUE ~ 0))
+```
+
+Next, use a normal hierarchical model with varying intercepts to model seasonal WHIP by a player's age, if they have yet had surgery in their career, if they were a starter in the particular season, and if they were a high school draftee (does not change by season). For the intercept we assume that WHIPs vary normally around the mean of about 1.4 and have a standard deviation of about 0.4. I use weakly informative priors for the other coefficients. 
+
+\begin{equation}
+\begin{split}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y & \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ with } \;\;  \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} \\
+\beta_{0j} | \beta_0, \sigma_0  & \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2) \\
+\beta_{0c}  & \sim N(1.4, 0.4^2) \\
+\beta_1  & \sim N(0, 0.25^2) \\
+\beta_2  & \sim N(0, 1.96^2) \\
+\beta_3  & \sim N(0, 1.81^2) \\
+\beta_4  & \sim N(0, 1^2) \\
+\sigma_y & \sim \text{Exp}(2.8) \\
+\sigma_0 & \sim \text{Exp}(1). \\
+\end{split}
+\end{equation}
+
+```{r}
+whipmod <- stan_glmer(
+  WHIP ~ Age + hs_draftee + starter + had_surgery + (1 | Player),
+  data = seasonal_sample_filtered, family = gaussian,
+  prior_intercept = normal(1.4, 0.4, autoscale = TRUE),
+  prior = normal(0, 2.5, autoscale = TRUE), 
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2, seed = 84735)
+
+prior_summary(whipmod)
+```
+
+The model seems to fit the data relatively well, though has a bit wider standard deviation in WHIP than we see in the true data. 
+```{r}
+pp_check(whipmod) +
+  xlab("WHIP")
+```
+
+In this model, there are a very large amount of parameters: 800 pitcher specific intercepts $\beta_{0j}$, and 7 global parameters $\beta_0, \beta_1, \sigma_y, \sigma_0$. The following tidy summary looks at the global summary:
+```{r}
+whipTidy <- tidy(whipmod, effects = "fixed",
+     conf.int = TRUE, conf.level = 0.80)
+```
+
+With this summary, the only significant variable is for starters. There is an 80% chance that the typical starter has a WHIP between 0.059 and 0.0209 lower than that of a reliever. This difference for starters can be seen in the plot below. The age coefficient is not significant, meaning we cannot say that the typical pitcher tends to get worse over his career. 
+```{r}
+mcmc_areas(whipmod, pars = vars(starts_with("starter")), prob = 0.8) + 
+  geom_vline(xintercept = 0)
+```
+
+We can also explore the models for all 100 players, $\beta_{0j} + \beta_1 X_{ij}+ \beta_2 X_{ij}+ \beta_3 X_{ij}+ \beta_4 X_{ij}$.  The player-specific posterior median models are plotted below and superimposed with the posterior median global model, $\beta_{0j} + \beta_1 X_{ij}+ \beta_2 X_{ij}+ \beta_3 X_{ij}+ \beta_4 X_{ij}$. We see the average pitcher declines in WHIP slightly over his career yet there is a lot of variability in WHIP between players. 
+```{r}
+player_summaries_1 <- whipmod %>%
+  spread_draws(`(Intercept)`, b[,Player]) %>% 
+  mutate(player_intercept = `(Intercept)` + b) %>% 
+  select(-`(Intercept)`, -b) %>% 
+  median_qi(.width = 0.80) %>% 
+  select(Player, player_intercept, .lower, .upper)
+
+B0 <- whipTidy$estimate[1]
+B1 <- whipTidy$estimate[2]
+ggplot(seasonal_sample_filtered, aes(y = WHIP, x = Age, group = Player)) + 
+  geom_abline(data = player_summaries_1, color = "gray",
+              aes(intercept = player_intercept, slope = B1)) + 
+  geom_abline(intercept = B0, slope = B1, color = "blue") + 
+  lims(x = c(20,40), y = c(1, 2))
+```
+
+Further, we can estimate what proportion of variability in WHIP is coming between pitchers versus within a pitcher. About 80% of variability in WHIP is coming from within a pitcher versus between pitchers - perhaps we should try to account for more of this by including varying slopes?
+```{r}
+set.seed(123)
+tidy_sigma <- tidy(whipmod, effects = "ran_pars")
+tidy_sigma
+
+# estimate what proportion of variability comes from differences between pitchers - only 20.3%
+sigma_0 <- tidy_sigma[1,3]
+sigma_y <- tidy_sigma[2,3]
+sigma_0^2 / (sigma_0^2 + sigma_y^2)
+```
+
+Notes
+- I don't necessarily like these models and will be working more on them/different modeling techniques this weekend. The models are not complete quite yet and I know there are issues with them to fix. 
