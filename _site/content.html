@@ -11,7 +11,7 @@
 
 
 
-<title>Main page</title>
+<title>Data Cleaning</title>
 
 <script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -258,15 +258,413 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Main page</h1>
+<h1 class="title toc-ignore">Data Cleaning</h1>
 
 </div>
 
 
-<p>This is where you link to the other files, which are in a folder in the main directory. Make sure the name of the folder does not have an underscore in it. You also need to go knit those files within the folder first. And, if you update the file, <strong>you need to reknit it!</strong>.</p>
-<ul>
-<li><a href="content/FinalDataCleaning.html">File 1</a></li>
-</ul>
+<p><strong>The following document shows my data cleaning steps.</strong></p>
+<p>Download each season of debuts (1987-2021) from Baseball Reference. As an example, 2021 debuts can be found <a href="https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching">here</a>. The dates had to be properly formatted before binding rows as the year was not recorded when downloading the data.</p>
+<pre class="r"><code>debuts1987 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1987.xls&quot;) %&gt;%
+  mutate(yeard = 1987, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1987$Debut &lt;-as.Date(with(debuts1987,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1988 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1988.xls&quot;) %&gt;%
+  mutate(yeard = 1988, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1988$Debut &lt;-as.Date(with(debuts1988,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1989 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1989.xls&quot;) %&gt;%
+  mutate(yeard = 1989, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1989$Debut &lt;-as.Date(with(debuts1989,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1990 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1990.xls&quot;) %&gt;%
+  mutate(yeard = 1990, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1990$Debut &lt;-as.Date(with(debuts1990,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1991 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1991.xls&quot;) %&gt;%
+  mutate(yeard = 1991, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1991$Debut &lt;-as.Date(with(debuts1991,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1992 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1992.xls&quot;) %&gt;%
+  mutate(yeard = 1992, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1992$Debut &lt;-as.Date(with(debuts1992,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1993 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1993.xls&quot;) %&gt;%
+  mutate(yeard = 1993, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1993$Debut &lt;-as.Date(with(debuts1993,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1994 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1994.xls&quot;) %&gt;%
+  mutate(yeard = 1994, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1994$Debut &lt;-as.Date(with(debuts1994,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1995 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1995.xls&quot;) %&gt;%
+  mutate(yeard = 1995, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1995$Debut &lt;-as.Date(with(debuts1995,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1996 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1996.xls&quot;) %&gt;%
+  mutate(yeard = 1996, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1996$Debut &lt;-as.Date(with(debuts1996,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1997 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1997.xls&quot;) %&gt;%
+  mutate(yeard = 1997, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1997$Debut &lt;-as.Date(with(debuts1997,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1998 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1998.xls&quot;) %&gt;%
+  mutate(yeard = 1998, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1998$Debut &lt;-as.Date(with(debuts1998,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts1999 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1999.xls&quot;) %&gt;%
+  mutate(yeard = 1999, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts1999$Debut &lt;-as.Date(with(debuts1999,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2000 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2000.xls&quot;) %&gt;%
+  mutate(yeard = 2000, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2000$Debut &lt;-as.Date(with(debuts2000,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2001 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2001.xls&quot;) %&gt;%
+  mutate(yeard = 2001, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2001$Debut &lt;-as.Date(with(debuts2001,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2002 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2002.xls&quot;) %&gt;%
+  mutate(yeard = 2002, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2002$Debut &lt;-as.Date(with(debuts2002,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2003 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2003.xls&quot;) %&gt;%
+  mutate(yeard = 2003, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2003$Debut &lt;-as.Date(with(debuts2003,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2004 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2004.xls&quot;) %&gt;%
+  mutate(yeard = 2004, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2004$Debut &lt;-as.Date(with(debuts2004,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2005 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2005.xls&quot;) %&gt;%
+  mutate(yeard = 2005, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2005$Debut &lt;-as.Date(with(debuts2005,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2006 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2006.xls&quot;) %&gt;%
+  mutate(yeard = 2006, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2006$Debut &lt;-as.Date(with(debuts2006,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2007 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2007.xls&quot;) %&gt;%
+  mutate(yeard = 2007, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2007$Debut &lt;-as.Date(with(debuts2007,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2008 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2008.xls&quot;) %&gt;%
+  mutate(yeard = 2008, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2008$Debut &lt;-as.Date(with(debuts2008,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2009 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2009.xls&quot;) %&gt;%
+  mutate(yeard = 2009, 
+         dayd = day(Debut),
+         monthd = month(Debut),
+         ERA = as.numeric(ERA))
+debuts2009$Debut &lt;-as.Date(with(debuts2009,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2010 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2010.xls&quot;) %&gt;%
+  mutate(yeard = 2010, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2010$Debut &lt;-as.Date(with(debuts2010,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2011 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2011.xls&quot;) %&gt;%
+  mutate(yeard = 2011, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2011$Debut &lt;-as.Date(with(debuts2011,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2012 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2012.xls&quot;) %&gt;%
+  mutate(yeard = 2012, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2012$Debut &lt;-as.Date(with(debuts2012,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2013 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2013.xls&quot;) %&gt;%
+  mutate(yeard = 2013, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2013$Debut &lt;-as.Date(with(debuts2013,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2014 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2014.xls&quot;) %&gt;%
+  mutate(yeard = 2014, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2014$Debut &lt;-as.Date(with(debuts2014,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2015 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2015.xls&quot;) %&gt;%
+  mutate(yeard = 2015, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2015$Debut &lt;-as.Date(with(debuts2015,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2016 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2016.xls&quot;) %&gt;%
+  mutate(yeard = 2016, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2016$Debut &lt;-as.Date(with(debuts2016,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2017 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2017.xls&quot;) %&gt;%
+  mutate(yeard = 2017, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2017$Debut &lt;-as.Date(with(debuts2017,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2018 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2018.xls&quot;) %&gt;%
+  mutate(yeard = 2018, 
+         dayd = day(Debut),
+         monthd = month(Debut), 
+         ERA = as.numeric(ERA))
+debuts2018$Debut &lt;-as.Date(with(debuts2018,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2019 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2019.xls&quot;) %&gt;%
+  mutate(yeard = 2019, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2019$Debut &lt;-as.Date(with(debuts2019,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2020 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2020.xls&quot;) %&gt;%
+  mutate(yeard = 2020, 
+         dayd = day(Debut),
+         monthd = month(Debut))
+debuts2020$Debut &lt;-as.Date(with(debuts2020,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+debuts2021 &lt;- read_xls(&quot;data/pitcherdebuts/debuts2021.xls&quot;) %&gt;%
+  mutate(yeard = 2021, 
+         dayd = day(Debut),
+         monthd = month(Debut)) %&gt;%
+  select(Rk:Age, yeard:monthd)
+debuts2021$Debut &lt;-as.Date(with(debuts2021,paste(yeard,monthd,dayd,sep=&quot;-&quot;)),&quot;%Y-%m-%d&quot;)
+
+pitch_debuts &lt;- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts1991, debuts1992, debuts1993, debuts1994, debuts1995, debuts1996, debuts1997, debuts1998, debuts1999, debuts2000, debuts2001, debuts2002, debuts2003, debuts2004, debuts2005, debuts2006, debuts2007, debuts2008, debuts2009, debuts2010, debuts2011, debuts2012, debuts2013, debuts2014, debuts2015, debuts2016, debuts2017, debuts2018, debuts2019, debuts2020, debuts2021)
+
+write_rds(pitch_debuts, &quot;data/pitch_debuts.rds&quot;)</code></pre>
+<p>Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the <code>pitch_debuts</code> data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: - John Ericks from 1967-06-16 to 1967-09-16<br />
+- T.J. Mathews from 1970-01-19 to 1970-01-09<br />
+- Bryan Ward from 1972-01-25 to 1972-01-28.<br />
+- Rafael Carmona from 1972-10-02 to 1971-10-02<br />
+- Luther Hackman from 1974-10-06 to 1974-10-10<br />
+- Jason Ryan from 1976-01-23 to 1976-01-21<br />
+- Osvaldo Fernandez from 1968-11-04 to 1966-11-04<br />
+- Jim Parque from 1976-02-08 to 1975-02-08<br />
+- Dicky Gonzalez from 1978-10-21 to 1978-12-21<br />
+- Carmen Cali from 1978-11-02 to 1978-11-04<br />
+</p>
+<p>I then cleaned the draft data. I filtered for all draft years since 1987, since that is the first year without the Secondary January and June Amateur draft. I removed the players drafted in the Rule V draft phases and selected the variables of interest. I also created a height variable that combined variables for the player’s hieght in inches and height in feet, as well as an indicator variable for if a player was a high school draftee.</p>
+<pre class="r"><code>draft &lt;- read_csv(&quot;data/draft_1965_2019_test_clean.csv&quot;)
+
+draft_clean_pitch &lt;- draft %&gt;%
+  filter(year &gt;1986, description == &quot;June Amateur Draft&quot;, primary_position %in% c(&quot;1&quot;, &quot;LHP&quot;, &quot;P&quot;, &quot;RHP&quot;, &quot;RP&quot;, &quot;SP&quot;)) %&gt;%
+  mutate(height = height_inches + 12*height_feet, 
+          hs_draftee = grepl(&quot;\\bHS\\b&quot;, school)) %&gt;%
+  select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, milb_g, round, round_sort, year, weight, height, bats, pick, overall, team_full, league_full, primary_position, team_abbrev, throws, league_id, school, trans_date, signed_sw, round_desc)</code></pre>
+<p>Next, I updated the <code>pitch_debuts</code> data set to remove total rows and strip “HOF” from the Hall of Fame names.</p>
+<pre class="r"><code>pitch_debuts &lt;- read_rds(&quot;data/pitch_debuts.rds&quot;) %&gt;%
+  filter(Name != &quot;Totals&quot;) %&gt;%
+  mutate(Name = str_remove_all(Name, &quot; HOF&quot;))</code></pre>
+<p>I then read in a data file that I created from Baseball Reference in a similar process to the <code>pitch_debuts</code>. Unfortunately, the original <code>pitch_debuts</code> download did not contain birth date, so I had to download the player debuts for each season which includes all position players and the birth dates of the pitchers. An example of the 2021 player debuts can be found <a href="https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml">here</a>. The file read in below contains all years since 1987 together.</p>
+<pre class="r"><code>all_debuts &lt;- read_rds(&quot;data/debuts.rds&quot;)</code></pre>
+<p>With this, I was able to add birth date to the <code>pitch_debuts</code> data set.</p>
+<pre class="r"><code># use all debuts (includes position players to get each player&#39;s date of birth)
+all_debuts_bday &lt;- all_debuts %&gt;%
+  select(Name, Debut, Birthdate) %&gt;%
+  mutate(Birthdate = as.Date(Birthdate))
+
+#join this with the pitch_debuts data set.
+pitch_debuts &lt;- pitch_debuts %&gt;%
+  mutate(Debut = as.Date(Debut)) %&gt;%
+  left_join(all_debuts_bday, by = c(&quot;Name&quot;, &quot;Debut&quot;))</code></pre>
+<p>I then joined the two data sets together by player and birth date. I first had to rename a handful of players in <code>pitch_debuts</code> to match their names from the draft data set. I realized these mismatched names when originally trying to join the data sets and having the draft data set denote them as having debuted in the <code>mlb_g</code> column but no debut date (which comes from Baseball Reference) being listed. Using a left join in this process keeps all players that were drafted, even if they did not make the major leagues.</p>
+<pre class="r"><code>pitch_debuts &lt;- pitch_debuts %&gt;%
+  mutate(Name = recode(Name, &quot;Dave Wainhouse&quot; = &quot;David Wainhouse&quot;), 
+         Name = recode(Name, &quot;Rod Bolton&quot; = &quot;Rodney Bolton&quot;), 
+         Name = recode(Name, &quot;Joey Dawley&quot; = &quot;Joe Dawley&quot;), 
+         Name = recode(Name, &quot;William VanLandingham&quot; = &quot;William Van Landingham&quot;), 
+         Name = recode(Name, &quot;J.J. Thobe&quot; = &quot;J. J. Thobe&quot;), 
+         Name = recode(Name, &quot;Peter Munro&quot; = &quot;Pete Munro&quot;), 
+         Name = recode(Name, &quot;Roland de la Maza&quot; = &quot;Roland DeLaMaza&quot;),
+         Name = recode(Name, &quot;Danny Kolb&quot; = &quot;Dan Kolb&quot;), 
+         Name = recode(Name, &quot;Steve Randolph&quot; = &quot;Stephen Randolph&quot;), 
+         Name = recode(Name, &quot;Richie Barker&quot; = &quot;Richard Barker&quot;), 
+         Name = recode(Name, &quot;Dave Coggin&quot; = &quot;David Coggin&quot;), 
+         Name = recode(Name, &quot;Mike Gonzalez&quot; = &quot;Michael Gonzalez&quot;),
+         Name = recode(Name, &quot;Frank Gracesqui&quot; = &quot;Franklyn Gracesqui&quot;), 
+         Name = recode(Name, &quot;Dave Pember&quot; = &quot;David Pember&quot;), 
+         Name = recode(Name, &quot;Bobby Keppel&quot; = &quot;Bob Keppel&quot;), 
+         Name = recode(Name, &quot;Andy Sisco&quot; = &quot;Andrew Sisco&quot;), 
+         Name = recode(Name, &quot;Mike O&#39;Connor&quot; = &quot;Michael O&#39;Connor&quot;), 
+         Name = recode(Name, &quot;Robert Mosebach&quot; = &quot;Bobby Mosebach&quot;), 
+         Name = recode(Name, &quot;Jon Niese&quot; = &quot;Jonathon Niese&quot;), 
+         Name = recode(Name, &quot;Charles Leesman&quot; = &quot;Charlie Leesman&quot;), 
+         Name = recode(Name, &quot;Nathan Adcock&quot; = &quot;Nate Adcock&quot;), 
+         Name = recode(Name, &quot;Danny Herrera&quot; = &quot;Daniel Herrera&quot;), 
+         Name = recode(Name, &quot;Pat McCoy&quot; = &quot;Patrick McCoy&quot;), 
+         Name = recode(Name, &quot;Robbie Ross&quot; = &quot;Robbie Ross Jr.&quot;), 
+         Name = recode(Name, &quot;T.J. House&quot; = &quot;TJ House&quot;), 
+         Name = recode(Name, &quot;Vidal Nuno III&quot; = &quot;Vidal Nuno&quot;), 
+         Name = recode(Name, &quot;Kenny Roberts&quot; = &quot;Ken Roberts&quot;), 
+         Name = recode(Name, &quot;Onelki García&quot; = &quot;Onelki Garcia&quot;), 
+         Name = recode(Name, &quot;James Sherfy&quot; = &quot;Jimmie Sherfy&quot;),
+         Name = recode(Name, &quot;Nestor Cortes Jr.&quot; = &quot;Nestor Cortes&quot;), 
+         Name = recode(Name, &quot;Thomas Eshelman&quot; = &quot;Tom Eshelman&quot;), 
+         Name = recode(Name, &quot;Pete Fairbanks&quot; = &quot;Peter Fairbanks&quot;), 
+         Name = recode(Name, &quot;Matthew Festa&quot; = &quot;Matt Festa&quot;), 
+         Name = recode(Name, &quot;J.D. Hammer&quot; = &quot;JD Hammer&quot;))
+
+pitchers &lt;- draft_clean_pitch %&gt;%
+  left_join(pitch_debuts, by = c(&quot;name_first_last&quot; = &quot;Name&quot;, &quot;birth_date&quot; = &quot;Birthdate&quot;)) %&gt;%
+  select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, Debut, Age, milb_g, round, year, pick, team_full, overall, trans_date, signed_sw, Yrs, From, To, ASG, WAR, W, L, `W-L%`, ERA, G, GS, GF, CG, SHO, SV, IP, H, R, ER, HR, BB, IBB, SO, HBP, BK, WP, BF, WHIP) %&gt;%
+  filter(name_first_last %notin% c(&quot;Ben Shelton&quot;, &quot;Mark Smith&quot;, &quot;Tom Marsh&quot;, &quot;J.R. Phillips&quot;, &quot;Scott Stahoviak&quot;, &quot;Ryan Klesko&quot;, &quot;Pedro Valdes&quot;, &quot;Scott McClain&quot;, &quot;Lou Collier&quot;, &quot;Tom Evans&quot;, &quot;Jon Zuber&quot;, &quot;Bryant Nelson&quot;, &quot;Jermaine Dye&quot;, &quot;Jim Chamblee&quot;, &quot;Brian Buchanan&quot;, &quot;Brad Wilkerson&quot;, &quot;Valentino Pascucci&quot;, &quot;Matt Kata&quot;, &quot;Doug DeVore&quot;, &quot;Ryan Christenson&quot;, &quot;Mike Rose&quot;, &quot;Jason Alfaro&quot;, &quot;Brad Hawpe&quot;, &quot;Greg Colbrunn&quot;, &quot;Justin Knoedler&quot;, &quot;Dallas McPherson&quot;, &quot;Kelly Johnson&quot;, &quot;Tommy Murphy&quot;, &quot;Chip Ambres&quot;, &quot;Nick Markakis&quot;, &quot;Clay Timpner&quot;, &quot;Matt Downs&quot;, &quot;Mark Trumbo&quot;, &quot;Charlie Blackmon&quot;, &quot;Buster Posey&quot;, &quot;Brandon Belt&quot;, &quot;Carlos Moncrief&quot;, &quot;Bryce Brentz&quot;, &quot;Alex Hassan&quot;, &quot;Kaleb Cowart&quot;, &quot;Chad Wallach&quot;, &quot;Brock Stassi&quot;, &quot;Jake Cave&quot;, &quot;Sam Hilliard&quot;, &quot;J.B. Miadich&quot;, &quot;Dave Williams&quot;, &quot;Mike Neu&quot;, &quot;David Davidson&quot;))</code></pre>
+<p>Some players were drafted multiple times, so I took the most recent draft date of each player.</p>
+<pre class="r"><code>pitchers_recent_draft &lt;- pitchers %&gt;%
+  group_by(name_first_last, birth_date) %&gt;%
+  filter(row_number() == n())</code></pre>
+<p>I then loaded in the Tommy John data and joined that that to the <code>pitchers_recent_draft</code>. Create an indicator variable that indicates if the player has had Tommy John surgery. I created an indicator variable for if the player had surgery as well as the player’s age at surgery. I created variables for the player’s approximate draft date (June 10th as the draft takes place in early June each year), and created a categorical variable indicating if the surgery took place between their draft and debut date, after they debuted, before being drafted (specifying here if the player debuts as well), or if the player did not have surgery. I then created a more general version of this variable, indicating if the surgery took place before the draft, after the draft, or not at all. Finally, I called this file <code>pitchers_complete</code>.</p>
+<pre class="r"><code>pitchers_complete &lt;- pitchers_recent_draft %&gt;%
+  left_join(tommyjohn, by = c(&quot;name_first_last&quot; = &quot;Player&quot;)) %&gt;%
+  mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
+                                 TRUE ~ 0), 
+         surgery_age = time_length(difftime(surgery_date, birth_date), &quot;years&quot;), 
+         apprx_draft_date = as.Date(paste(year, &quot;06&quot;, &quot;10&quot;, sep=&quot;-&quot;)), 
+         surgery_time = case_when(surgery_date &gt; apprx_draft_date &amp; surgery_date &lt; Debut &amp; Debut &gt;= &quot;1970-01-01&quot; ~ &quot;between draft/debut&quot;,
+          surgery_date &lt;= apprx_draft_date &amp; Debut &gt; &quot;1970-01-01&quot; ~ &quot;before draft date, player debuts&quot;, 
+          surgery_date &gt;= Debut &amp; Debut &gt; &quot;1970-01-01&quot; ~ &quot;after debut&quot;,
+          is.na(Debut) &amp; surgery_date &lt;= apprx_draft_date ~ &quot;before draft, no debut&quot;, 
+          is.na(Debut) &amp; surgery_date &gt; apprx_draft_date ~ &quot;after draft, no debut&quot;,
+          TRUE ~ &quot;no surgery&quot;),
+         mlb_g = case_when(is.na(Debut) == TRUE ~ 0, 
+                           TRUE ~ 1), 
+         mlb_g = as.factor(mlb_g),
+         surgery_time_binary = case_when(surgery_time %in% c(&quot;after draft, no debut&quot;, &quot;after debut&quot;, &quot;between draft/debut&quot;) ~ &quot;after draft&quot;, 
+                                         surgery_time %in% c(&quot;before draft date, player debuts&quot;, &quot;before draft, no debut&quot;) ~ &quot;before draft&quot;, 
+                                         TRUE ~ &quot;no surgery&quot;))
+
+write_rds(pitchers_complete, &quot;data/pitchers_complete.rds&quot;)</code></pre>
+<p>Next, I was interested in getting seasonal information to understand how a player changed over the course of their career. I used <a href="https://stathead.com/baseball/season_finder.cgi?request=1&amp;match=single&amp;order_by=SO&amp;qualifiers=nomin&amp;minIpVal=162&amp;minDecVal=14&amp;mingamesVal=40&amp;year_min=1987&amp;year_max=2021&amp;lgs%5B%5D=AL&amp;lgs%5B%5D=NL&amp;type=p&amp;age_min=0&amp;age_max=99&amp;season_start=1&amp;season_end=-1&amp;games_started=60&amp;games_relieved=80&amp;location=pob&amp;locationMatch=is&amp;isHOF=either">Stathead</a> to get this data and pasted it in an excel file.</p>
+<pre class="r"><code>seasonal &lt;- read_excel(&quot;../data/seasonPitcher.xls&quot;)</code></pre>
+<p>Next, I filtered the <code>pitchers_complete</code> data to create a dataframe of pitchers that debut.</p>
+<pre class="r"><code>pitchers_debut &lt;- pitchers_complete %&gt;%
+  filter(mlb_g == 1) %&gt;%
+  mutate(starter = case_when(GS &gt;= 1 ~ &quot;starter&quot;, 
+                             TRUE ~ &quot;reliever&quot;), 
+         draft_to_debut = time_length(difftime(Debut, apprx_draft_date), &quot;years&quot;))</code></pre>
+<p>I then created a data set of players that had surgery and debuted. In creating this data set, I realized that some players had multiple surgeries, and thus created variables that would list the date of each player’s first, second, and third surgery (only one player had 3 surgeries). A few players had the same name in this data set an for ease of joining purposes and to avoid potential errors I removed them from the analysis because there were so few of them. I also created a variable called <code>surgery1time</code>, which states when the player had their first surgery: before being drafted, in between draft and debut, or after debut.</p>
+<pre class="r"><code>surgeryDebut &lt;- pitchers_debut %&gt;%
+  filter(surgery_time %in% c(&quot;after debut&quot;, &quot;before draft date, player debuts&quot;, &quot;between draft/debut&quot;)) %&gt;%
+  rename(draftYear = year, 
+         debutAge = Age, 
+         careerERA = ERA, 
+         careerG = G, 
+         careerGS = GS, 
+         careerGF = GF, 
+         careerCG = CG, 
+         careerW = W, 
+         careerIP = IP, 
+         careerSV = SV, 
+         careerSO = SO, 
+         careerWHIP = WHIP) %&gt;%
+  select(name_first_last, birth_date, hs_draftee, Debut, round, debutAge, draftYear, pick, From, To, Yrs, ASG, WAR, careerERA, careerG, careerGS, careerGF, careerCG, careerW, careerIP, careerSV, careerSV, careerSO, careerWHIP, surgery_date, apprx_draft_date) %&gt;%
+  group_by(name_first_last) %&gt;%
+  arrange(surgery_date) %&gt;%
+  mutate(surgery_number = paste0(&quot;Surgery &quot;, row_number())) %&gt;%
+  pivot_wider(id_cols = c(name_first_last:careerWHIP,apprx_draft_date), names_from = surgery_number, values_from = surgery_date) %&gt;%
+  filter(name_first_last %!in% c(&quot;Scott Baker&quot;, &quot;Steve Sparks&quot;, &quot;Scott Lewis&quot;, &quot;Chris Carpenter&quot;, &quot;Justin Miller&quot;)) %&gt;%
+  mutate(surgery1time = case_when(`Surgery 1` &gt;= apprx_draft_date &amp; `Surgery 1` &lt; Debut ~ &quot;between draft and debut&quot;, 
+                                  `Surgery 1` &lt; apprx_draft_date ~ &quot;before draft&quot;, 
+                                  `Surgery 1` &gt;= Debut ~ &quot;after debut&quot;, 
+                                  TRUE ~ &quot;help!&quot;))</code></pre>
+<p>Another issue I came across when working with the <code>seasonal</code> data was that if a player played on multiple teams in one season, there stats for that season were listed as two different rows. For some stats, like games played, it is easy to just add the rows together. However, for stats like WHIP or ERA+, the rows must be combined by some kind of weighted average based on the number of innings the player pitched or other factors. The following steps show how I fixed this joining issue for players that had surgery:</p>
+<pre class="r"><code>#get seasonal stats only for players that had surgery
+surgery_seasonal &lt;- seasonal %&gt;%
+  filter(Player %in% surgeryDebut$name_first_last) %&gt;%
+  group_by(Player, Year) %&gt;%
+  mutate(nteam = n()) #shows how many teams they played on in a season
+
+#filter for cases when a player played on two teams in a single season. We need to combine these rows. 
+surgery_seasonal_2teams &lt;- surgery_seasonal%&gt;%
+  filter(nteam == 2) %&gt;%
+  group_by(Player, Year) %&gt;%
+  summarize(`ERA+` = weighted.mean(`ERA+`, w=IP), BA = weighted.mean(BA, w=IP), OBP = weighted.mean(OBP, w=IP), SLG = weighted.mean(SLG, w=IP), OPS = weighted.mean(OPS, w=IP), `OPS+` = weighted.mean(`OPS+`, w=IP), SO = sum(SO), Age = mean(Age), G = sum(G), GS = sum(GS), CG = sum(CG), SHO = sum(SHO), GF = sum(GF), W = sum(W), L = sum(L), `W-L%` = 1, SV = sum(SV), IP = sum(IP), H = sum(H), R = sum(R), ER = sum(ER), BB = sum(BB), ERA = 1, `K%` = 1, `BB%` = 1, HR = sum(HR), BF = sum(BF), AB = sum(AB), `2B` = sum(`2B`), `3B` = sum(`3B`), `IBB` = sum(`IBB`), HBP = sum(HBP), SH = sum(SH), SF = sum(SF), GDP = sum(GDP), SB = sum(SB), CS = sum(CS), PO = sum(PO), BK = sum(BK), WP = sum(WP),Pit = sum(Pit), Str = sum(Str)) %&gt;%
+  distinct() %&gt;%
+  mutate(`W-L%` = round(W/(W+L), 2), 
+         ERA = round((9*ER)/IP, 2), 
+         `K%` = round(SO/AB, 2), 
+         `BB%` = round(BB/AB, 2)) %&gt;%
+  mutate(Tm = &quot;2teams&quot;, Lg = &quot;NL/AL&quot;)
+
+#filter for seasons where a player only played on one team that season. Order the columns so they are in the same order as the new 2 team data
+surgery_seasonal_1team = surgery_seasonal %&gt;%
+  filter(nteam == 1) %&gt;%
+  select(Player, Year, `ERA+`, BA, OBP, SLG, OPS, `OPS+`, SO, Age, G, GS, CG, SHO, GF, W, L, `W-L%`, SV, IP, H, R, ER, BB, ERA, `K%`, `BB%`, HR, BF, AB, `2B`, `3B`, IBB, HBP, SH, SF, GDP, SB, CS, PO, BK, WP, Pit, Str, Tm, Lg)
+
+#row bind the one team and two team data
+surgery_seasonal_joined = rbind(surgery_seasonal_2teams, surgery_seasonal_1team)
+
+#join this with the surgeryPostDebut data to include career stats, draft information, birthdate, surgery info, and other crucial information. 
+surgery_seasonal_complete &lt;- surgery_seasonal_joined %&gt;%
+  left_join(surgeryDebut, by = c(&quot;Player&quot; = &quot;name_first_last&quot;))  %&gt;%
+  mutate(surgery1Year = year(`Surgery 1`), 
+         statsTime = case_when(Year &lt;= surgery1Year ~ &quot;before&quot;, 
+                               Year &gt; surgery1Year ~ &quot;after&quot;))</code></pre>
+<p>I then do the same process for players that did not have surgery. Again, I got rid of a couple players that had the same name as another player for simplicity and to avoid joining errors.</p>
+<pre class="r"><code>noSurgDebut &lt;- pitchers_debut %&gt;%
+  filter(surgery_time == &quot;no surgery&quot;) %&gt;%
+  rename(draftYear = year, 
+         debutAge = Age, 
+         careerERA = ERA, 
+         careerG = G, 
+         careerGS = GS, 
+         careerGF = GF, 
+         careerCG = CG, 
+         careerW = W, 
+         careerIP = IP, 
+         careerSV = SV, 
+         careerSO = SO, 
+         careerWHIP = WHIP) %&gt;%
+  select(name_first_last, birth_date, hs_draftee, Debut, round, debutAge, draftYear, pick, From, To, Yrs, ASG, WAR, careerERA, careerG, careerGS, careerGF, careerCG, careerW, careerIP, careerSV, careerSV, careerSO, careerWHIP, surgery_date, apprx_draft_date, surgery_time) %&gt;%
+  filter(name_first_last %!in% c(&quot;Austin Adams&quot;, &quot;Bobby Jones&quot;, &quot;Chris George&quot;, &quot;Dan Smith&quot;, &quot;Scott Taylor&quot;))
+
+#get seasonal stats only for players that did not have surgery
+noSurg_seasonal &lt;- seasonal %&gt;%
+  filter(Player %in% noSurgDebut$name_first_last) %&gt;%
+  group_by(Player, Year) %&gt;%
+  mutate(nteam = n()) #shows how many teams they played on in a season
+
+#filter for cases when a player played on 2-3 teams in a single season. We need to combine these rows. 
+noSurg_seasonal_2teams &lt;- noSurg_seasonal %&gt;%
+  filter(nteam &gt;=2) %&gt;%
+  group_by(Player, Year) %&gt;%
+  summarize(`ERA+` = weighted.mean(`ERA+`, w=IP), BA = weighted.mean(BA, w=IP), OBP = weighted.mean(OBP, w=IP), SLG = weighted.mean(SLG, w=IP), OPS = weighted.mean(OPS, w=IP), `OPS+` = weighted.mean(`OPS+`, w=IP), SO = sum(SO), Age = mean(Age), G = sum(G), GS = sum(GS), CG = sum(CG), SHO = sum(SHO), GF = sum(GF), W = sum(W), L = sum(L), `W-L%` = 1, SV = sum(SV), IP = sum(IP), H = sum(H), R = sum(R), ER = sum(ER), BB = sum(BB), ERA = 1, `K%` = 1, `BB%` = 1, HR = sum(HR), BF = sum(BF), AB = sum(AB), `2B` = sum(`2B`), `3B` = sum(`3B`), `IBB` = sum(`IBB`), HBP = sum(HBP), SH = sum(SH), SF = sum(SF), GDP = sum(GDP), SB = sum(SB), CS = sum(CS), PO = sum(PO), BK = sum(BK), WP = sum(WP),Pit = sum(Pit), Str = sum(Str)) %&gt;%
+  distinct() %&gt;%
+  mutate(`W-L%` = round(W/(W+L), 2), 
+         ERA = round((9*ER)/IP, 2), 
+         `K%` = round(SO/AB, 2), 
+         `BB%` = round(BB/AB, 2)) %&gt;%
+  mutate(Tm = &quot;2teams&quot;, Lg = &quot;NL/AL&quot;)
+
+#filter for seasons where a player only played on one team that season. Order the columns so they are in the same order as the new 2 team data
+noSurg_seasonal_1team = noSurg_seasonal %&gt;%
+  filter(nteam == 1) %&gt;%
+  select(Player, Year, `ERA+`, BA, OBP, SLG, OPS, `OPS+`, SO, Age, G, GS, CG, SHO, GF, W, L, `W-L%`, SV, IP, H, R, ER, BB, ERA, `K%`, `BB%`, HR, BF, AB, `2B`, `3B`, IBB, HBP, SH, SF, GDP, SB, CS, PO, BK, WP, Pit, Str, Tm, Lg)
+
+#row bind the one team and two team data
+noSurg_seasonal_joined = rbind(noSurg_seasonal_2teams, noSurg_seasonal_1team)
+
+#join this with the noSurgDebut data to include career stats, draft information, birthdate, surgery info, and other crucial information. 
+noSurg_seasonal_complete &lt;- noSurg_seasonal_joined %&gt;%
+  left_join(noSurgDebut, by = c(&quot;Player&quot; = &quot;name_first_last&quot;)) %&gt;%
+  select(-surgery_date, -surgery_time)</code></pre>
+<p>Finally, I combined the two data frames: <code>surgery_seasonal_complete</code> and <code>noSurg_seasonal_complete</code>.</p>
+<pre class="r"><code>seasonal_complete &lt;- bind_rows(surgery_seasonal_complete, noSurg_seasonal_complete) %&gt;%
+  arrange(desc(Debut))</code></pre>
 
 
 

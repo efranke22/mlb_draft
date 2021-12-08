@@ -1,7 +1,7 @@
 navbar: 
   title: Title
   left:
-  - text: Main page that links to files
+  - text: Data Cleaning
     href: content.html
 output:
   html_document:
