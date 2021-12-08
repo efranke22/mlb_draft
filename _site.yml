@@ -1,7 +1,7 @@
 navbar: 
   title: Title
   left:
-  - text: Data Cleaning
+  - text: Data Cleaning!
     href: content.html
 output:
   html_document:
