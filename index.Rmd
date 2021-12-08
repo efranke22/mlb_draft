@@ -1,0 +1,160 @@
+---
+title: "Pitcher Career Trajectory in the MLB and Tommy John Surgery"
+author: "Erin Franke"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+```
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(bayesrules)
+library(tidyverse)
+library(rstanarm)
+library(broom.mixed)
+library(tidybayes)
+library(forcats)
+library(bayesplot)
+library(ggtext)
+library(janitor)
+library(gt)
+library(tidymodels)
+library(probably)
+library(vip)
+library(ggmosaic)
+tidymodels_prefer()
+`%!in%` <- Negate(`%in%`)
+
+seasonal_complete <- read_csv("data/seasonal_complete.csv")
+```
+
+A pitcher's success can vary dramatically over the course of their major league career. 2015 Cy Young [Jake Arrieta](https://www.baseball-reference.com/players/a/arrieja01.shtml) had tremendous success in the middle of his career, but began his career with the Orioles where he pitched at levels far below league average. In more recent seasons he has also struggled. To measure a pitcher's success overtime, we might look at ERA+, which takes a player's earned run average each season and normalizes it across the entire league. An ERA+ of 100 represents league average, 150 and 80 would respectively represent 50% better and 20% worse than league average. Despite many still considering Arrieta legendary, the quality of his pitching has been slowly declining since his Cy Young season it is clear his value to a team is not the same as it once was. Arrieta's career trajectory can be seen on the graph on the left below, but this path is just one example of the type of trajectory a player's career may take. Current Atlanta Brave [Drew Smyly](https://www.baseball-reference.com/register/player.fcgi?id=smyly-001tod) has had a lot of variability in his success as a pitcher, as seen on the graph on the right. While his first four seasons appeared quite strong, Smyly performed below average 2016 and 2019 and since has had a little more success.
+
+```{r, echo=FALSE, figures-side, fig.show="hold", out.width="50%"}
+seasonal_complete %>%
+  filter(Player == "Jake Arrieta") %>%
+  ggplot(aes(x=Year, y=`ERA+`))+
+  geom_point()+
+  theme_classic()+
+  labs(x="", title = "Jake Arrieta's ERA+ over his career")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 12))+
+  geom_smooth(method="loess", se=FALSE, color = "azure3")
+seasonal_complete %>%
+  filter(Player == "Drew Smyly") %>%
+  ggplot(aes(x=Year, y=`ERA+`))+
+  geom_point()+
+  theme_classic()+
+  labs(x="", title = "Drew Smyly's ERA+ over his career")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 12))+
+  ylim(c(50, 220))+
+  geom_smooth(method = "loess", se=FALSE, color = "azure3")
+```
+
+What might contribute to these pitching trends? While trends are incredibly complex and the result of many different factors, a major factor to pitching success is health. Notice Smyly's missing stats in 2017 and 2018 - during this period, he underwent [Tommy John surgery](https://www.hopkinsmedicine.org/health/treatment-tests-and-therapies/tommy-john-surgery-ulnar-collateral-ligament-reconstruction). Tommy John surgery is a major surgery that repairs a torn ulnar collateral ligament in the elbow by replacing it with a tendon from another part of a player's body. Recovery typically takes a year, but can take up to 2. \
+
+This analysis will seek to understand how the trajectory of a pitcher's MLB success changes over the course of his career. We will measure success in two forms: by WHIP to assess skill as well as innings pitched to measure longevity. In investigating these trajectories, we will especially focus on the impact of undergoing Tommy John surgery and try to weight the risk of signing a player that has had this surgery. 
+
+## Data 
+
+This analysis uses data from all players drafted since 1987, the first year that the Secondary January Amateur draft did not exist. Data for this analysis were collected from multiple sources. Information on each player's draft round and year were collected from a GitHub source and checked for accuracy. I then joined these data by player name and birth date with [career level pitcher statistics and debut information from Baseball Reference](https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching), which had to be downloaded individually for each season. Tommy John surgery information was obtained from [MLB Reports](https://mlbreports.com/tj-surgery/), and finally individual player data on the seasonal level were downloaded from [Stathead Baseball](https://stathead.com/baseball/season_finder.cgi?request=1&match=single&order_by=SO&qualifiers=nomin&minIpVal=162&minDecVal=14&mingamesVal=40&year_min=1987&year_max=2021&lgs%5B%5D=AL&lgs%5B%5D=NL&type=p&age_min=0&age_max=99&season_start=1&season_end=-1&games_started=60&games_relieved=80&location=pob&locationMatch=is&isHOF=either). The diversity of the downloaded data allowed me to create a database with a wide variety of variables, and enables the comparison between players as well as the analysis of a player's development over the course of their career. 
+
+The main variables I will use in this analysis are displayed in the codebook below. They come from my final data set, which is called `seasonal_complete`. My process to create this data set is fully documented in the data cleaning section of this website. 
+```{r, echo=FALSE}
+codebook = data.frame(Variable = c("Player", "Year", "Age", "hs_draftee", "birth_date", "Debut", "round", "surgery1Year", "statsTime", "surgery1time", "ERA+", "G", "GS", "IP", "WHIP", "SO"), 
+                      Meaning = c("name of pitcher", "year of MLB season", "player age during season", "whether the player was drafted in high school", "player date of birth", "player MLB debut data", "the player's draft round", "the year the player had their first Tommy John surgery while in the MLB", "whether the stats for this season come before or after the player's first surgery", "whether the player's first surgery came before draft, between draft & debut, or after debut", "adjusts a pitcher's ERA according to the pitcher's ballpark and the ERA of the pitcher's league", "games played", "games started", "innings pitched", "number of walks + hits per inning pitched", "strikeouts"))
+codebook %>%
+  gt() %>%
+  tab_header(
+    title = md("**Codebook**")
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "honeydew"),
+    locations = cells_body(
+      rows = Variable %in% c("Player", "Age", "birth_date", "round", "statsTime", "ERA+", "GS", "WHIP"))) %>%
+  tab_style(
+    style = cell_fill(color = "lightcyan3"),
+    locations = cells_body(
+      rows = Variable %!in% c("Player", "Age", "birth_date", "round", "statsTime", "ERA+", "GS", "WHIP"))) %>%
+  tab_options(
+    table.font.size = px(13L)
+  )
+```
+
+## Understanding career trajectory
+
+In understanding career trajectory and longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are aged between their low twenties and low thirties. 
+```{r, echo=FALSE}
+seasonal_complete %>%
+  filter(Year == 2021) %>%
+  ggplot(aes(x=Age))+
+  geom_density(fill = "lightcyan3")+
+  theme_classic()+
+  labs(title = "Age distribution of pitchers in the MLB", x="Age", y="")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_text(family = "mono", size = 11), 
+        axis.title.x = element_text(family = "mono", size = 11))
+```
+
+In trying to understand the impact of having Tommy John surgery on a player's career, we should seek to understand if there are differences in **career length** for players that receive the surgery. To do this, we compare the career length in seasons of players that did not have surgery at any point in their career to those that had surgery between their draft and debut date. We remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. Additionally, we do not include players that had surgery before being drafted as scouts deemed them worthy enough to be drafted despite their surgery. When looking at the graph, there do not seem to be any significant differences.
+```{r, echo=FALSE}
+seasonal_complete %>%
+  filter(surgery1time %!in% c("after debut", "before draft")) %>%
+  mutate(surgery1time = case_when(surgery1time == "between draft and debut" ~ "between draft and debut", 
+                                  TRUE ~ "no surgery")) %>%
+  group_by(Player, surgery1time) %>%
+  summarize(n = n(), lastyear = max(Year)) %>%
+  filter(lastyear < 2020) %>%
+  ggplot(aes(x=n, fill=surgery1time))+
+  geom_density(alpha = 0.5)+
+  theme_classic()+
+  scale_fill_manual(values = c("deepskyblue4", "sienna2"))+
+  labs(x="career length (seasons)", y="", title = "MLB career length (seasons) averages a similar length for players that<strong><span style='color:sienna2'> did not have Tommy John</span></strong></b>", subtitle = "<strong><span style='color:sienna2'> surgery before debuting </span></strong></b>in comparison to <strong><span style='color:deepskyblue4'>those that had surgery between draft and debut</span></strong></b>")+
+  theme(plot.title = element_markdown(size = 9, family = "mono"),
+        plot.subtitle = element_markdown(size = 9, family = "mono"), 
+        plot.title.position = "plot",
+        legend.position = "none", 
+        axis.title.x = element_text(family = "mono", size = 9))
+```
+
+For players having their first Tommy John surgery following their MLB debut, it could be interesting to understand how their performance compares before versus after their surgery. In the following graph, we can notice that players average more innings following their surgery if it is done while they are younger. On the other hand, as players age into their thirties they almost always average fewer innings after the surgery. Players that did not play following their surgery are shown in red, but this trend holds even just looking at the blue dots, which represent players that play again after their surgery.
+```{r, echo=FALSE}
+diffIP <- seasonal_complete %>%
+  filter(surgery1time == "after debut") %>%
+  group_by(Player, statsTime) %>%
+  summarize(avg_IP = round(mean(IP),2), 
+            surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
+  select(Player, surgery_age, statsTime, avg_IP) %>%
+  distinct() %>%
+  pivot_wider(id_cols = Player:surgery_age, names_from = statsTime, values_from = avg_IP) 
+
+diffIP$after <- replace_na(diffIP$after, 0)
+
+diffIP %>%
+  mutate(difference = after - before, 
+         leaveMLB = case_when(after == 0 ~ "leave MLB", 
+                              TRUE ~ "continue playing")) %>%
+  ggplot(aes(x=surgery_age, y= difference, color = leaveMLB))+
+  geom_point()+
+  theme_classic()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") %>%
+  labs(title = "Pitchers tend to average fewer seasonal innings after having Tommy John surgery than prior to it", subtitle = "Players that leave the MLB completely are shown in<strong><span style='color:red'> red</span></strong></b>", x = "surgery age", y = "Average seasonal IP after - before surgery")+
+  theme(plot.title = element_markdown(size = 9, family = "mono"),
+        plot.subtitle = element_markdown(size = 9, family = "mono"),
+        plot.title.position = "plot", 
+        axis.title.x = element_markdown(size = 8, family = "mono"), 
+        axis.title.y = element_markdown(size = 8, family = "mono"),
+        legend.position = "none")+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = c("navy", "red"))
+```
+
+A question that might be prompted when understanding this graph is 
