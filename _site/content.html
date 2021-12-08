@@ -244,7 +244,7 @@ $(document).ready(function () {
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="content.html">Main page that links to files</a>
+  <a href="content.html">Data Cleaning!</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -446,7 +446,7 @@ debuts2021$Debut &lt;-as.Date(with(debuts2021,paste(yeard,monthd,dayd,sep=&quot;
 
 pitch_debuts &lt;- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts1991, debuts1992, debuts1993, debuts1994, debuts1995, debuts1996, debuts1997, debuts1998, debuts1999, debuts2000, debuts2001, debuts2002, debuts2003, debuts2004, debuts2005, debuts2006, debuts2007, debuts2008, debuts2009, debuts2010, debuts2011, debuts2012, debuts2013, debuts2014, debuts2015, debuts2016, debuts2017, debuts2018, debuts2019, debuts2020, debuts2021)
 
-write_rds(pitch_debuts, &quot;data/pitch_debuts.rds&quot;)</code></pre>
+#write_rds(pitch_debuts, &quot;data/pitch_debuts.rds&quot;)</code></pre>
 <p>Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the <code>pitch_debuts</code> data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: - John Ericks from 1967-06-16 to 1967-09-16<br />
 - T.J. Mathews from 1970-01-19 to 1970-01-09<br />
 - Bryan Ward from 1972-01-25 to 1972-01-28.<br />
@@ -522,14 +522,18 @@ pitch_debuts &lt;- pitch_debuts %&gt;%
 pitchers &lt;- draft_clean_pitch %&gt;%
   left_join(pitch_debuts, by = c(&quot;name_first_last&quot; = &quot;Name&quot;, &quot;birth_date&quot; = &quot;Birthdate&quot;)) %&gt;%
   select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, Debut, Age, milb_g, round, year, pick, team_full, overall, trans_date, signed_sw, Yrs, From, To, ASG, WAR, W, L, `W-L%`, ERA, G, GS, GF, CG, SHO, SV, IP, H, R, ER, HR, BB, IBB, SO, HBP, BK, WP, BF, WHIP) %&gt;%
-  filter(name_first_last %notin% c(&quot;Ben Shelton&quot;, &quot;Mark Smith&quot;, &quot;Tom Marsh&quot;, &quot;J.R. Phillips&quot;, &quot;Scott Stahoviak&quot;, &quot;Ryan Klesko&quot;, &quot;Pedro Valdes&quot;, &quot;Scott McClain&quot;, &quot;Lou Collier&quot;, &quot;Tom Evans&quot;, &quot;Jon Zuber&quot;, &quot;Bryant Nelson&quot;, &quot;Jermaine Dye&quot;, &quot;Jim Chamblee&quot;, &quot;Brian Buchanan&quot;, &quot;Brad Wilkerson&quot;, &quot;Valentino Pascucci&quot;, &quot;Matt Kata&quot;, &quot;Doug DeVore&quot;, &quot;Ryan Christenson&quot;, &quot;Mike Rose&quot;, &quot;Jason Alfaro&quot;, &quot;Brad Hawpe&quot;, &quot;Greg Colbrunn&quot;, &quot;Justin Knoedler&quot;, &quot;Dallas McPherson&quot;, &quot;Kelly Johnson&quot;, &quot;Tommy Murphy&quot;, &quot;Chip Ambres&quot;, &quot;Nick Markakis&quot;, &quot;Clay Timpner&quot;, &quot;Matt Downs&quot;, &quot;Mark Trumbo&quot;, &quot;Charlie Blackmon&quot;, &quot;Buster Posey&quot;, &quot;Brandon Belt&quot;, &quot;Carlos Moncrief&quot;, &quot;Bryce Brentz&quot;, &quot;Alex Hassan&quot;, &quot;Kaleb Cowart&quot;, &quot;Chad Wallach&quot;, &quot;Brock Stassi&quot;, &quot;Jake Cave&quot;, &quot;Sam Hilliard&quot;, &quot;J.B. Miadich&quot;, &quot;Dave Williams&quot;, &quot;Mike Neu&quot;, &quot;David Davidson&quot;))</code></pre>
+  filter(name_first_last %!in% c(&quot;Ben Shelton&quot;, &quot;Mark Smith&quot;, &quot;Tom Marsh&quot;, &quot;J.R. Phillips&quot;, &quot;Scott Stahoviak&quot;, &quot;Ryan Klesko&quot;, &quot;Pedro Valdes&quot;, &quot;Scott McClain&quot;, &quot;Lou Collier&quot;, &quot;Tom Evans&quot;, &quot;Jon Zuber&quot;, &quot;Bryant Nelson&quot;, &quot;Jermaine Dye&quot;, &quot;Jim Chamblee&quot;, &quot;Brian Buchanan&quot;, &quot;Brad Wilkerson&quot;, &quot;Valentino Pascucci&quot;, &quot;Matt Kata&quot;, &quot;Doug DeVore&quot;, &quot;Ryan Christenson&quot;, &quot;Mike Rose&quot;, &quot;Jason Alfaro&quot;, &quot;Brad Hawpe&quot;, &quot;Greg Colbrunn&quot;, &quot;Justin Knoedler&quot;, &quot;Dallas McPherson&quot;, &quot;Kelly Johnson&quot;, &quot;Tommy Murphy&quot;, &quot;Chip Ambres&quot;, &quot;Nick Markakis&quot;, &quot;Clay Timpner&quot;, &quot;Matt Downs&quot;, &quot;Mark Trumbo&quot;, &quot;Charlie Blackmon&quot;, &quot;Buster Posey&quot;, &quot;Brandon Belt&quot;, &quot;Carlos Moncrief&quot;, &quot;Bryce Brentz&quot;, &quot;Alex Hassan&quot;, &quot;Kaleb Cowart&quot;, &quot;Chad Wallach&quot;, &quot;Brock Stassi&quot;, &quot;Jake Cave&quot;, &quot;Sam Hilliard&quot;, &quot;J.B. Miadich&quot;, &quot;Dave Williams&quot;, &quot;Mike Neu&quot;, &quot;David Davidson&quot;))</code></pre>
 <p>Some players were drafted multiple times, so I took the most recent draft date of each player.</p>
 <pre class="r"><code>pitchers_recent_draft &lt;- pitchers %&gt;%
   group_by(name_first_last, birth_date) %&gt;%
   filter(row_number() == n())</code></pre>
 <p>I then loaded in the Tommy John data and joined that that to the <code>pitchers_recent_draft</code>. Create an indicator variable that indicates if the player has had Tommy John surgery. I created an indicator variable for if the player had surgery as well as the player’s age at surgery. I created variables for the player’s approximate draft date (June 10th as the draft takes place in early June each year), and created a categorical variable indicating if the surgery took place between their draft and debut date, after they debuted, before being drafted (specifying here if the player debuts as well), or if the player did not have surgery. I then created a more general version of this variable, indicating if the surgery took place before the draft, after the draft, or not at all. Finally, I called this file <code>pitchers_complete</code>.</p>
-<pre class="r"><code>pitchers_complete &lt;- pitchers_recent_draft %&gt;%
+<pre class="r"><code>tommyjohn &lt;- read_xlsx(&quot;data/tommyjohndata.xlsx&quot;)
+pitchers_complete &lt;- pitchers_recent_draft %&gt;%
   left_join(tommyjohn, by = c(&quot;name_first_last&quot; = &quot;Player&quot;)) %&gt;%
+  rename(surgery_date = `TJ Surgery Date`, 
+         Age = Age.x) %&gt;%
+  select(-Age.y) %&gt;%
   mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
                                  TRUE ~ 0), 
          surgery_age = time_length(difftime(surgery_date, birth_date), &quot;years&quot;), 
@@ -547,9 +551,9 @@ pitchers &lt;- draft_clean_pitch %&gt;%
                                          surgery_time %in% c(&quot;before draft date, player debuts&quot;, &quot;before draft, no debut&quot;) ~ &quot;before draft&quot;, 
                                          TRUE ~ &quot;no surgery&quot;))
 
-write_rds(pitchers_complete, &quot;data/pitchers_complete.rds&quot;)</code></pre>
+#write_rds(pitchers_complete, &quot;data/pitchers_complete.rds&quot;)</code></pre>
 <p>Next, I was interested in getting seasonal information to understand how a player changed over the course of their career. I used <a href="https://stathead.com/baseball/season_finder.cgi?request=1&amp;match=single&amp;order_by=SO&amp;qualifiers=nomin&amp;minIpVal=162&amp;minDecVal=14&amp;mingamesVal=40&amp;year_min=1987&amp;year_max=2021&amp;lgs%5B%5D=AL&amp;lgs%5B%5D=NL&amp;type=p&amp;age_min=0&amp;age_max=99&amp;season_start=1&amp;season_end=-1&amp;games_started=60&amp;games_relieved=80&amp;location=pob&amp;locationMatch=is&amp;isHOF=either">Stathead</a> to get this data and pasted it in an excel file.</p>
-<pre class="r"><code>seasonal &lt;- read_excel(&quot;../data/seasonPitcher.xls&quot;)</code></pre>
+<pre class="r"><code>seasonal &lt;- read_excel(&quot;data/seasonPitcher.xls&quot;)</code></pre>
 <p>Next, I filtered the <code>pitchers_complete</code> data to create a dataframe of pitchers that debut.</p>
 <pre class="r"><code>pitchers_debut &lt;- pitchers_complete %&gt;%
   filter(mlb_g == 1) %&gt;%

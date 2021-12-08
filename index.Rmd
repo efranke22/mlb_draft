@@ -89,6 +89,9 @@ codebook %>%
   )
 ```
 
+\
+\
+
 ## Understanding career trajectory
 
 In understanding career trajectory and longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are aged between their low twenties and low thirties. 

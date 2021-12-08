@@ -14,13 +14,13 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 library(stringr)
-`%notin%` <- Negate(`%in%`)
+`%!in%` <- Negate(`%in%`)
 ```
 
 **The following document shows my data cleaning steps.**
 
 Download each season of debuts (1987-2021) from Baseball Reference. As an example, 2021 debuts can be found [here](https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching). The dates had to be properly formatted before binding rows as the year was not recorded when downloading the data. 
-```{r, eval=FALSE}
+```{r}
 debuts1987 <- read_xls("data/pitcherdebuts/debuts1987.xls") %>%
   mutate(yeard = 1987, 
          dayd = day(Debut),
@@ -202,7 +202,7 @@ debuts2021$Debut <-as.Date(with(debuts2021,paste(yeard,monthd,dayd,sep="-")),"%Y
 
 pitch_debuts <- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts1991, debuts1992, debuts1993, debuts1994, debuts1995, debuts1996, debuts1997, debuts1998, debuts1999, debuts2000, debuts2001, debuts2002, debuts2003, debuts2004, debuts2005, debuts2006, debuts2007, debuts2008, debuts2009, debuts2010, debuts2011, debuts2012, debuts2013, debuts2014, debuts2015, debuts2016, debuts2017, debuts2018, debuts2019, debuts2020, debuts2021)
 
-write_rds(pitch_debuts, "data/pitch_debuts.rds")
+#write_rds(pitch_debuts, "data/pitch_debuts.rds")
 ```
 
 Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the `pitch_debuts` data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: 
@@ -218,7 +218,7 @@ Next, the draft data dating back to 1965 was loaded in. This data would later be
 - Carmen Cali from 1978-11-02 to 1978-11-04 \
 
 I then cleaned the draft data. I filtered for all draft years since 1987, since that is the first year without the Secondary January and June Amateur draft. I removed the players drafted in the Rule V draft phases and selected the variables of interest. I also created a height variable that combined variables for the player's hieght in inches and height in feet, as well as an indicator variable for if a player was a high school draftee. 
-```{r, eval=FALSE}
+```{r}
 draft <- read_csv("data/draft_1965_2019_test_clean.csv")
 
 draft_clean_pitch <- draft %>%
@@ -229,19 +229,19 @@ draft_clean_pitch <- draft %>%
 ```
 
 Next, I updated the `pitch_debuts` data set to remove total rows and strip "HOF" from the Hall of Fame names. 
-```{r, eval=FALSE}
+```{r}
 pitch_debuts <- read_rds("data/pitch_debuts.rds") %>%
   filter(Name != "Totals") %>%
   mutate(Name = str_remove_all(Name, " HOF"))
 ```
 
 I then read in a data file that I created from Baseball Reference in a similar process to the `pitch_debuts`. Unfortunately, the original `pitch_debuts` download did not contain birth date, so I had to download the player debuts for each season which includes all position players and the birth dates of the pitchers. An example of the 2021 player debuts can be found [here](https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml). The file read in below contains all years since 1987 together. 
-```{r, eval=FALSE}
+```{r}
 all_debuts <- read_rds("data/debuts.rds")
 ```
 
 With this, I was able to add birth date to the `pitch_debuts` data set. 
-```{r, eval=FALSE}
+```{r}
 # use all debuts (includes position players to get each player's date of birth)
 all_debuts_bday <- all_debuts %>%
   select(Name, Debut, Birthdate) %>%
@@ -254,7 +254,7 @@ pitch_debuts <- pitch_debuts %>%
 ```
 
 I then joined the two data sets together by player and birth date. I first had to rename a handful of players in `pitch_debuts` to match their names from the draft data set. I realized these mismatched names when originally trying to join the data sets and having the draft data set denote them as having debuted in the `mlb_g` column but no debut date (which comes from Baseball Reference) being listed. Using a left join in this process keeps all players that were drafted, even if they did not make the major leagues.
-```{r, eval=FALSE}
+```{r}
 pitch_debuts <- pitch_debuts %>%
   mutate(Name = recode(Name, "Dave Wainhouse" = "David Wainhouse"), 
          Name = recode(Name, "Rod Bolton" = "Rodney Bolton"), 
@@ -298,16 +298,20 @@ pitchers <- draft_clean_pitch %>%
 ```
 
 Some players were drafted multiple times, so I took the most recent draft date of each player. 
-```{r, eval=FALSE}
+```{r}
 pitchers_recent_draft <- pitchers %>%
   group_by(name_first_last, birth_date) %>%
   filter(row_number() == n())
 ```
 
 I then loaded in the Tommy John data and joined that that to the `pitchers_recent_draft`. Create an indicator variable that indicates if the player has had Tommy John surgery. I created an indicator variable for if the player had surgery as well as the player's age at surgery. I created variables for the player's approximate draft date (June 10th as the draft takes place in early June each year), and created a categorical variable indicating if the surgery took place between their draft and debut date, after they debuted, before being drafted (specifying here if the player debuts as well), or if the player did not have surgery. I then created a more general version of this variable, indicating if the surgery took place before the draft, after the draft, or not at all. Finally, I called this file `pitchers_complete`. 
-```{r, eval=FALSE}
+```{r}
+tommyjohn <- read_xlsx("data/tommyjohndata.xlsx")
 pitchers_complete <- pitchers_recent_draft %>%
   left_join(tommyjohn, by = c("name_first_last" = "Player")) %>%
+  rename(surgery_date = `TJ Surgery Date`, 
+         Age = Age.x) %>%
+  select(-Age.y) %>%
   mutate(had_surgery = case_when(!is.na(surgery_date) ~ 1, 
                                  TRUE ~ 0), 
          surgery_age = time_length(difftime(surgery_date, birth_date), "years"), 
@@ -325,16 +329,16 @@ pitchers_complete <- pitchers_recent_draft %>%
                                          surgery_time %in% c("before draft date, player debuts", "before draft, no debut") ~ "before draft", 
                                          TRUE ~ "no surgery"))
 
-write_rds(pitchers_complete, "data/pitchers_complete.rds")
+#write_rds(pitchers_complete, "data/pitchers_complete.rds")
 ```
 
 Next, I was interested in getting seasonal information to understand how a player changed over the course of their career. I used [Stathead](https://stathead.com/baseball/season_finder.cgi?request=1&match=single&order_by=SO&qualifiers=nomin&minIpVal=162&minDecVal=14&mingamesVal=40&year_min=1987&year_max=2021&lgs%5B%5D=AL&lgs%5B%5D=NL&type=p&age_min=0&age_max=99&season_start=1&season_end=-1&games_started=60&games_relieved=80&location=pob&locationMatch=is&isHOF=either) to get this data and pasted it in an excel file.  
-```{r, eval=FALSE}
-seasonal <- read_excel("../data/seasonPitcher.xls")
+```{r}
+seasonal <- read_excel("data/seasonPitcher.xls")
 ```
 
 Next, I filtered the `pitchers_complete` data to create a dataframe of pitchers that debut. 
-```{r, eval=FALSE}
+```{r}
 pitchers_debut <- pitchers_complete %>%
   filter(mlb_g == 1) %>%
   mutate(starter = case_when(GS >= 1 ~ "starter", 
@@ -343,7 +347,7 @@ pitchers_debut <- pitchers_complete %>%
 ```
 
 I then created a data set of players that had surgery and debuted. In creating this data set, I realized that some players had multiple surgeries, and thus created variables that would list the date of each player's first, second, and third surgery (only one player had 3 surgeries). A few players had the same name in this data set an for ease of joining purposes and to avoid potential errors I removed them from the analysis because there were so few of them. I also created a variable called `surgery1time`, which states when the player had their first surgery: before being drafted, in between draft and debut, or after debut.  
-```{r, eval=FALSE}
+```{r}
 surgeryDebut <- pitchers_debut %>%
   filter(surgery_time %in% c("after debut", "before draft date, player debuts", "between draft/debut")) %>%
   rename(draftYear = year, 
@@ -371,7 +375,7 @@ surgeryDebut <- pitchers_debut %>%
 ```
 
 Another issue I came across when working with the `seasonal` data was that if a player played on multiple teams in one season, there stats for that season were listed as two different rows. For some stats, like games played, it is easy to just add the rows together. However, for stats like WHIP or ERA+, the rows must be combined by some kind of weighted average based on the number of innings the player pitched or other factors. The following steps show how I fixed this joining issue for players that had surgery: 
-```{r, eval=FALSE}
+```{r}
 #get seasonal stats only for players that had surgery
 surgery_seasonal <- seasonal %>%
   filter(Player %in% surgeryDebut$name_first_last) %>%
@@ -407,7 +411,7 @@ surgery_seasonal_complete <- surgery_seasonal_joined %>%
 ```
 
 I then do the same process for players that did not have surgery. Again, I got rid of a couple players that had the same name as another player for simplicity and to avoid joining errors. 
-```{r, eval=FALSE}
+```{r}
 noSurgDebut <- pitchers_debut %>%
   filter(surgery_time == "no surgery") %>%
   rename(draftYear = year, 
@@ -458,7 +462,7 @@ noSurg_seasonal_complete <- noSurg_seasonal_joined %>%
 ```
 
 Finally, I combined the two data frames: `surgery_seasonal_complete` and `noSurg_seasonal_complete`. 
-```{r, eval=FALSE}
+```{r}
 seasonal_complete <- bind_rows(surgery_seasonal_complete, noSurg_seasonal_complete) %>%
   arrange(desc(Debut))
 ```
