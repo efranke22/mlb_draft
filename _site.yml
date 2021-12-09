@@ -1,5 +1,5 @@
 navbar: 
-  title: Title
+  title: TJ Analysis
   left:
   - text: Data Cleaning!
     href: content.html

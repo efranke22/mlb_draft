@@ -322,7 +322,7 @@ In addition to performance metrics, we can see if there is any relationship betw
 stats %>%
   mutate(starter = recode(starter, "0" = "reliever", "1" = "starter")) %>%
   ggplot()+
-  geom_mosaic(aes(x = product(played_after,starter), fill = played_after))  +
+  geom_mosaic(aes(x = product(played_after,starter), fill = played_after), alpha = 0.7)  +
   labs(x= "", y = "", title = "Starters <strong><span style='color:navy'>play after surgery</span></strong></b> more often than relievers")+
   scale_fill_manual(values = c("navy", "red")) + 
   theme_classic()+
@@ -333,7 +333,7 @@ stats %>%
 
 stats %>%
   ggplot()+
-  geom_mosaic(aes(x = product(played_after,hs_draftee), fill = played_after))  +
+  geom_mosaic(aes(x = product(played_after,hs_draftee), fill = played_after), alpha = 0.7)  +
   labs(x= "", y = "", title = "High school draftees <strong><span style='color:navy'>play after surgery</span></strong></b> slightly more often than college or international picks")+
   scale_fill_manual(values = c("navy", "red")) + 
   theme_classic()+
@@ -362,7 +362,7 @@ stats %>%
 ```
 
 
-### Introducing the model
+### Model Introduction and Priors
 
 Having a basic understanding of some of these variables, we can now build a logistic regression model. In building this model, we will let $Y$ be a binary indicator of if the pitcher plays again at the MLB level following his Tommy John surgery, which occurs at probability $\pi$. Understanding the results of the exploratory data analysis, this model will utilize the following predictors: \
 
@@ -373,13 +373,9 @@ Having a basic understanding of some of these variables, we can now build a logi
 - $X_5$: continuous variable representing a pitcher's **strikeout rate** prior to their surgery \
 - $X_6$: continuous variable for the **age at which a player got surgery** \
 
-
-### Setting the priors 
-
 ```{r, echo=FALSE}
 #Independence between predictors?**. And it is okay to use normal priors for binary predictors correct?
 ```
-
 
 Starting with the centered intercept $\beta_{0c}$, we recall our prior understanding that for the average player there is roughly a 73% chance of rain, i.e. $\pi \approx 0.73$. As a result, we can set the prior mean for $\beta_{0c}$ on the *log(odds)* scales to 1: \
 
@@ -387,7 +383,13 @@ Starting with the centered intercept $\beta_{0c}$, we recall our prior understan
 \log\left(\frac{\pi}{1-\pi}\right) = \log\left(\frac{0.73}{1-0.27}\right) \approx 1  .
 \end{split}
 
-Setting a range for this normal prior, we have a vague understanding of the *log(odds of returning)* ranges from roughly 0.3 to 1.7 $(1 \pm 2*0.35)$. In other words, the odds of a typical pitcher playing after at the MLB level following surgery could be somewhere between: $(e^{0.3}, e^{1.7}) \approx (1.35, 5.474)$. Thus the *probability* of the average pitcher returning to pitch at the MLB level could be somewhere between about 0.57 and 0.85: \
+Setting a range for this normal prior, we have a vague understanding of the *log(odds of returning)* ranges from roughly 0.3 to 1.7 $(1 \pm 2*0.35)$. In other words, the odds of a typical pitcher playing after at the MLB level following surgery could be somewhere between: 
+
+\begin{split}
+$(e^{0.3}, e^{1.7}) \approx (1.35, 5.474)$
+\end{split}
+
+Thus the *probability* of the average pitcher returning to pitch at the MLB level could be somewhere between about 0.57 and 0.85: \
 \begin{split}
 \left(\frac{1.35}{1 + 1.35}, \frac{5.474}{1 + 5.474}\right) \approx (0.5747, 0.8455).
 \end{split}
@@ -405,18 +407,25 @@ We have only a very basic understanding of each predictor's relationship with a 
                & & \beta_6  & \sim N\left(0.7503, 2.5^2 \right) \\
 \end{array}
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 played_after_mod <- stan_glm(played_after ~ starter + totalIP + avgWHIP + hs_draftee + kRate + surgery_age,
                              data = stats, family = binomial,
                              prior_intercept = normal(1, 0.35),
                              prior = normal(0, 2.5, autoscale = TRUE),
                              chains = 4, iter = 5000*2, seed = 84735, refresh=0)
-```
 
-```{r, include=FALSE}
 prior_summary(played_after_mod)$prior_intercept
 prior_summary(played_after_mod)$prior
 ```
+
+### Check the diagnostics
+
+Before getting into the results of the model, we should check the diagnostics of the simulation. The model above was run using **Markov Chain Monte Carlo simulation** techniques. This process enables us to estimate the posterior of our classification model and get a better understanding of what might contribute to a pitcher returning to the MLB following their surgery. However, not all simulations are perfect. We are looking for Markov chains that 
+
+
+
+
+
 
 ```{r, include=FALSE}
 tidy(played_after_mod, effects = "fixed", conf.int = TRUE, conf.level = 0.80)
