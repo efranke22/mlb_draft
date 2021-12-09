@@ -205,7 +205,7 @@ pitch_debuts <- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts
 #write_rds(pitch_debuts, "data/pitch_debuts.rds")
 ```
 
-Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the `pitch_debuts` data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: 
+Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the `pitch_debuts` data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: \
 - John Ericks from 1967-06-16 to 1967-09-16 \
 - T.J. Mathews from 1970-01-19 to 1970-01-09 \
 - Bryan Ward from 1972-01-25 to 1972-01-28. \
@@ -294,7 +294,7 @@ pitch_debuts <- pitch_debuts %>%
 pitchers <- draft_clean_pitch %>%
   left_join(pitch_debuts, by = c("name_first_last" = "Name", "birth_date" = "Birthdate")) %>%
   select(name_first_last, name_last_first, birth_date, hs_draftee, mlb_g, Debut, Age, milb_g, round, year, pick, team_full, overall, trans_date, signed_sw, Yrs, From, To, ASG, WAR, W, L, `W-L%`, ERA, G, GS, GF, CG, SHO, SV, IP, H, R, ER, HR, BB, IBB, SO, HBP, BK, WP, BF, WHIP) %>%
-  filter(name_first_last %notin% c("Ben Shelton", "Mark Smith", "Tom Marsh", "J.R. Phillips", "Scott Stahoviak", "Ryan Klesko", "Pedro Valdes", "Scott McClain", "Lou Collier", "Tom Evans", "Jon Zuber", "Bryant Nelson", "Jermaine Dye", "Jim Chamblee", "Brian Buchanan", "Brad Wilkerson", "Valentino Pascucci", "Matt Kata", "Doug DeVore", "Ryan Christenson", "Mike Rose", "Jason Alfaro", "Brad Hawpe", "Greg Colbrunn", "Justin Knoedler", "Dallas McPherson", "Kelly Johnson", "Tommy Murphy", "Chip Ambres", "Nick Markakis", "Clay Timpner", "Matt Downs", "Mark Trumbo", "Charlie Blackmon", "Buster Posey", "Brandon Belt", "Carlos Moncrief", "Bryce Brentz", "Alex Hassan", "Kaleb Cowart", "Chad Wallach", "Brock Stassi", "Jake Cave", "Sam Hilliard", "J.B. Miadich", "Dave Williams", "Mike Neu", "David Davidson"))
+  filter(name_first_last %!in% c("Ben Shelton", "Mark Smith", "Tom Marsh", "J.R. Phillips", "Scott Stahoviak", "Ryan Klesko", "Pedro Valdes", "Scott McClain", "Lou Collier", "Tom Evans", "Jon Zuber", "Bryant Nelson", "Jermaine Dye", "Jim Chamblee", "Brian Buchanan", "Brad Wilkerson", "Valentino Pascucci", "Matt Kata", "Doug DeVore", "Ryan Christenson", "Mike Rose", "Jason Alfaro", "Brad Hawpe", "Greg Colbrunn", "Justin Knoedler", "Dallas McPherson", "Kelly Johnson", "Tommy Murphy", "Chip Ambres", "Nick Markakis", "Clay Timpner", "Matt Downs", "Mark Trumbo", "Charlie Blackmon", "Buster Posey", "Brandon Belt", "Carlos Moncrief", "Bryce Brentz", "Alex Hassan", "Kaleb Cowart", "Chad Wallach", "Brock Stassi", "Jake Cave", "Sam Hilliard", "J.B. Miadich", "Dave Williams", "Mike Neu", "David Davidson"))
 ```
 
 Some players were drafted multiple times, so I took the most recent draft date of each player. 

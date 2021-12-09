@@ -12,7 +12,7 @@
 <meta name="author" content="Erin Franke" />
 
 
-<title>Pitcher Career Trajectory in the MLB and Tommy John Surgery</title>
+<title>Tommy John Surgery and its Relationship to MLB Pitcher Career Trajectory</title>
 
 <script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -333,27 +333,33 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Pitcher Career Trajectory in the MLB and Tommy John Surgery</h1>
+<h1 class="title toc-ignore">Tommy John Surgery and its Relationship to MLB Pitcher Career Trajectory</h1>
 <h4 class="author">Erin Franke</h4>
 
 </div>
 
 
+<p><br />
+<br />
+</p>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
 <p>A pitcher’s success can vary dramatically over the course of their major league career. 2015 Cy Young <a href="https://www.baseball-reference.com/players/a/arrieja01.shtml">Jake Arrieta</a> had tremendous success in the middle of his career, but began his career with the Orioles where he pitched at levels far below league average. In more recent seasons he has also struggled. To measure a pitcher’s success overtime, we might look at ERA+, which takes a player’s earned run average each season and normalizes it across the entire league. An ERA+ of 100 represents league average, 150 and 80 would respectively represent 50% better and 20% worse than league average. Despite many still considering Arrieta legendary, the quality of his pitching has been slowly declining since his Cy Young season it is clear his value to a team is not the same as it once was. Arrieta’s career trajectory can be seen on the graph on the left below, but this path is just one example of the type of trajectory a player’s career may take. Current Atlanta Brave <a href="https://www.baseball-reference.com/register/player.fcgi?id=smyly-001tod">Drew Smyly</a> has had a lot of variability in his success as a pitcher, as seen on the graph on the right. While his first four seasons appeared quite strong, Smyly performed below average 2016 and 2019 and since has had a little more success.</p>
 <p><img src="index_files/figure-html/figures-side-1.png" width="50%" /><img src="index_files/figure-html/figures-side-2.png" width="50%" /></p>
 <p>What might contribute to these pitching trends? While trends are incredibly complex and the result of many different factors, a major factor to pitching success is health. Notice Smyly’s missing stats in 2017 and 2018 - during this period, he underwent <a href="https://www.hopkinsmedicine.org/health/treatment-tests-and-therapies/tommy-john-surgery-ulnar-collateral-ligament-reconstruction">Tommy John surgery</a>. Tommy John surgery is a major surgery that repairs a torn ulnar collateral ligament in the elbow by replacing it with a tendon from another part of a player’s body. Recovery typically takes a year, but can take up to 2.<br />
 </p>
 <p>This analysis will seek to understand how the trajectory of a pitcher’s MLB success changes over the course of his career. We will measure success in two forms: by WHIP to assess skill as well as innings pitched to measure longevity. In investigating these trajectories, we will especially focus on the impact of undergoing Tommy John surgery and try to weight the risk of signing a player that has had this surgery.</p>
+</div>
 <div id="data" class="section level2">
 <h2>Data</h2>
 <p>This analysis uses data from all players drafted since 1987, the first year that the Secondary January Amateur draft did not exist. Data for this analysis were collected from multiple sources. Information on each player’s draft round and year were collected from a GitHub source and checked for accuracy. I then joined these data by player name and birth date with <a href="https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching">career level pitcher statistics and debut information from Baseball Reference</a>, which had to be downloaded individually for each season. Tommy John surgery information was obtained from <a href="https://mlbreports.com/tj-surgery/">MLB Reports</a>, and finally individual player data on the seasonal level were downloaded from <a href="https://stathead.com/baseball/season_finder.cgi?request=1&amp;match=single&amp;order_by=SO&amp;qualifiers=nomin&amp;minIpVal=162&amp;minDecVal=14&amp;mingamesVal=40&amp;year_min=1987&amp;year_max=2021&amp;lgs%5B%5D=AL&amp;lgs%5B%5D=NL&amp;type=p&amp;age_min=0&amp;age_max=99&amp;season_start=1&amp;season_end=-1&amp;games_started=60&amp;games_relieved=80&amp;location=pob&amp;locationMatch=is&amp;isHOF=either">Stathead Baseball</a>. The diversity of the downloaded data allowed me to create a database with a wide variety of variables, and enables the comparison between players as well as the analysis of a player’s development over the course of their career.</p>
 <p>The main variables I will use in this analysis are displayed in the codebook below. They come from my final data set, which is called <code>seasonal_complete</code>. My process to create this data set is fully documented in the data cleaning section of this website.</p>
-<div id="mkxbfphuly" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="xhgcyxdrno" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#mkxbfphuly .gt_table {
+#xhgcyxdrno .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -378,7 +384,7 @@ div.tocify {
   border-left-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_heading {
+#xhgcyxdrno .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -390,7 +396,7 @@ div.tocify {
   border-right-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_title {
+#xhgcyxdrno .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -400,7 +406,7 @@ div.tocify {
   border-bottom-width: 0;
 }
 
-#mkxbfphuly .gt_subtitle {
+#xhgcyxdrno .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -410,13 +416,13 @@ div.tocify {
   border-top-width: 0;
 }
 
-#mkxbfphuly .gt_bottom_border {
+#xhgcyxdrno .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_col_headings {
+#xhgcyxdrno .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -431,7 +437,7 @@ div.tocify {
   border-right-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_col_heading {
+#xhgcyxdrno .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -451,7 +457,7 @@ div.tocify {
   overflow-x: hidden;
 }
 
-#mkxbfphuly .gt_column_spanner_outer {
+#xhgcyxdrno .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -463,15 +469,15 @@ div.tocify {
   padding-right: 4px;
 }
 
-#mkxbfphuly .gt_column_spanner_outer:first-child {
+#xhgcyxdrno .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mkxbfphuly .gt_column_spanner_outer:last-child {
+#xhgcyxdrno .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mkxbfphuly .gt_column_spanner {
+#xhgcyxdrno .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -483,7 +489,7 @@ div.tocify {
   width: 100%;
 }
 
-#mkxbfphuly .gt_group_heading {
+#xhgcyxdrno .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -505,7 +511,7 @@ div.tocify {
   vertical-align: middle;
 }
 
-#mkxbfphuly .gt_empty_group_heading {
+#xhgcyxdrno .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -520,15 +526,15 @@ div.tocify {
   vertical-align: middle;
 }
 
-#mkxbfphuly .gt_from_md > :first-child {
+#xhgcyxdrno .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mkxbfphuly .gt_from_md > :last-child {
+#xhgcyxdrno .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mkxbfphuly .gt_row {
+#xhgcyxdrno .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -547,7 +553,7 @@ div.tocify {
   overflow-x: hidden;
 }
 
-#mkxbfphuly .gt_stub {
+#xhgcyxdrno .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -559,7 +565,7 @@ div.tocify {
   padding-left: 12px;
 }
 
-#mkxbfphuly .gt_summary_row {
+#xhgcyxdrno .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -569,7 +575,7 @@ div.tocify {
   padding-right: 5px;
 }
 
-#mkxbfphuly .gt_first_summary_row {
+#xhgcyxdrno .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -579,7 +585,7 @@ div.tocify {
   border-top-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_grand_summary_row {
+#xhgcyxdrno .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -589,7 +595,7 @@ div.tocify {
   padding-right: 5px;
 }
 
-#mkxbfphuly .gt_first_grand_summary_row {
+#xhgcyxdrno .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -599,11 +605,11 @@ div.tocify {
   border-top-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_striped {
+#xhgcyxdrno .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mkxbfphuly .gt_table_body {
+#xhgcyxdrno .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -612,7 +618,7 @@ div.tocify {
   border-bottom-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_footnotes {
+#xhgcyxdrno .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -626,13 +632,13 @@ div.tocify {
   border-right-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_footnote {
+#xhgcyxdrno .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#mkxbfphuly .gt_sourcenotes {
+#xhgcyxdrno .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -646,41 +652,41 @@ div.tocify {
   border-right-color: #D3D3D3;
 }
 
-#mkxbfphuly .gt_sourcenote {
+#xhgcyxdrno .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#mkxbfphuly .gt_left {
+#xhgcyxdrno .gt_left {
   text-align: left;
 }
 
-#mkxbfphuly .gt_center {
+#xhgcyxdrno .gt_center {
   text-align: center;
 }
 
-#mkxbfphuly .gt_right {
+#xhgcyxdrno .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mkxbfphuly .gt_font_normal {
+#xhgcyxdrno .gt_font_normal {
   font-weight: normal;
 }
 
-#mkxbfphuly .gt_font_bold {
+#xhgcyxdrno .gt_font_bold {
   font-weight: bold;
 }
 
-#mkxbfphuly .gt_font_italic {
+#xhgcyxdrno .gt_font_italic {
   font-style: italic;
 }
 
-#mkxbfphuly .gt_super {
+#xhgcyxdrno .gt_super {
   font-size: 65%;
 }
 
-#mkxbfphuly .gt_footnote_marks {
+#xhgcyxdrno .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 65%;
@@ -743,10 +749,88 @@ div.tocify {
 </div>
 <div id="understanding-career-trajectory" class="section level2">
 <h2>Understanding career trajectory</h2>
-<p>In understanding career trajectory and longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are aged between their low twenties and low thirties. <img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>In trying to understand the impact of having Tommy John surgery on a player’s career, we should seek to understand if there are differences in <strong>career length</strong> for players that receive the surgery. To do this, we compare the career length in seasons of players that did not have surgery at any point in their career to those that had surgery between their draft and debut date. We remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. Additionally, we do not include players that had surgery before being drafted as scouts deemed them worthy enough to be drafted despite their surgery. When looking at the graph, there do not seem to be any significant differences. <img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p>For players having their first Tommy John surgery following their MLB debut, it could be interesting to understand how their performance compares before versus after their surgery. In the following graph, we can notice that players average more innings following their surgery if it is done while they are younger. On the other hand, as players age into their thirties they almost always average fewer innings after the surgery. Players that did not play following their surgery are shown in red, but this trend holds even just looking at the blue dots, which represent players that play again after their surgery. <img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
-<p>A question that might be prompted when understanding this graph is</p>
+<div id="age-distribution" class="section level3">
+<h3>Age distribution</h3>
+<p>In understanding career trajectory and longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are aged between their low twenties and low thirties.<br />
+<img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="career-length" class="section level3">
+<h3>Career length</h3>
+<p>In trying to understand the impact of having Tommy John surgery on a player’s career, we should seek to understand if there are differences in <strong>career length</strong> for players that receive the surgery. To do this, we compare the career length in seasons of players that did not have surgery at any point in their career to those that had surgery between their draft and debut date. We remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. Additionally, we do not include players that had surgery before being drafted as scouts deemed them worthy enough to be drafted despite their surgery. When looking at the graph, there do not seem to be any significant differences.<br />
+<img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+<div id="performance" class="section level3">
+<h3>Performance</h3>
+<p>For players having their first Tommy John surgery following their MLB debut, it could be interesting to understand how their performance compares before versus after their surgery. In the following graph, we can notice that players average more innings following their surgery if it is done while they are younger. On the other hand, as players age into their thirties they almost always average fewer innings after the surgery. Players that did not play following their surgery are shown in red, but this trend holds even just looking at the blue dots, which represent players that play again after their surgery.<br />
+<img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>A question that might be prompted when understanding this graph is how the typical innings trajectory of a player that has not had Tommy John surgery plays out.</p>
+</div>
+</div>
+<div id="playing-after-tommy-john-surgery" class="section level2">
+<h2>Playing after Tommy John surgery</h2>
+<p>Tommy John surgery is a major procedure to go through, and thus it is not certain that a pitcher will return to the MLB following this surgery. For the 318 pitchers in this study that received Tommy John surgery following their MLB debut, 233 (73.27%) of them returned to the MLB to play again. These 318 pitchers all had the surgery prior to 2020, as many of those that received the surgery in 2020 and certainly in 2021 will not yet have recovered and returned major league baseball.</p>
+<div id="exploratory-data-analysis" class="section level3">
+<h3>Exploratory Data Analysis</h3>
+<p><br />
+If a team has a player decide to undergo Tommy John surgery, or is debating signing a player needing surgery, it would be helpful to understand what might be correlated with a player returning to the majors following their surgery.<br />
+</p>
+<p>A few possible performance based variables to look into could be the pitcher’s <strong>average strikeout rate</strong> and <strong>average WHIP</strong>, as well as <strong>total innings pitched</strong> prior to the surgery. We see that pitchers that return to the MLB tend to have slightly lower (better) WHIPs and slightly higher (better) strikeout rates. Additionally, the innings pitched variable appears highly informative. 75.29% of the pitchers that did not return to the MLB pitched fewer than 200 innings prior to their surgery. In comparison, only 51.5% of the pitchers that played after pitched less than 200 innings.</p>
+<p><br />
+<br />
+<img src="index_files/figure-html/figures-side2-1.png" width="50%" /><img src="index_files/figure-html/figures-side2-2.png" width="50%" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><br />
+In addition to performance metrics, we can see if there is any relationship between a pitcher playing after their surgery and their role (starter or reliever) as well as whether they were a high school draftee.</p>
+<p><img src="index_files/figure-html/figures-side3-1.png" width="50%" /><img src="index_files/figure-html/figures-side3-2.png" width="50%" /></p>
+<p>A final variable to investigate is the age at which the player is having the Tommy John surgery. Below, we see that pitchers that pitch again tend to be slightly younger in age at the time of their surgery in comparison to those that do not play again. However, this difference is not quite as substantial as one might have originally thought.<br />
+<br />
+<br />
+<img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+</div>
+<div id="introducing-the-model" class="section level3">
+<h3>Introducing the model</h3>
+<p>Having a basic understanding of some of these variables, we can now build a logistic regression model. In building this model, we will let <span class="math inline">\(Y\)</span> be a binary indicator of if the pitcher plays again at the MLB level following his Tommy John surgery, which occurs at probability <span class="math inline">\(\pi\)</span>. Understanding the results of the exploratory data analysis, this model will utilize the following predictors:<br />
+</p>
+<ul>
+<li><span class="math inline">\(X_1\)</span>: indicator variable for if a player is a <strong>starter</strong> (1) or <strong>reliever</strong> (0)<br />
+</li>
+<li><span class="math inline">\(X_2\)</span>: continuous variable representing the <strong>total number of innings pitched</strong> by a player prior to their surgery<br />
+</li>
+<li><span class="math inline">\(X_3\)</span>: continuous variable representing the player’s <strong>average WHIP</strong> prior to their surgery<br />
+</li>
+<li><span class="math inline">\(X_4\)</span>: indicator variable of if a player was a <strong>high school draftee</strong><br />
+</li>
+<li><span class="math inline">\(X_5\)</span>: continuous variable representing a pitcher’s <strong>strikeout rate</strong> prior to their surgery<br />
+</li>
+<li><span class="math inline">\(X_6\)</span>: continuous variable for the <strong>age at which a player got surgery</strong><br />
+</li>
+</ul>
+</div>
+<div id="setting-the-priors" class="section level3">
+<h3>Setting the priors</h3>
+<p>Starting with the centered intercept <span class="math inline">\(\beta_{0c}\)</span>, we recall our prior understanding that for the average player there is roughly a 73% chance of rain, i.e. <span class="math inline">\(\pi \approx 0.73\)</span>. As a result, we can set the prior mean for <span class="math inline">\(\beta_{0c}\)</span> on the <em>log(odds)</em> scales to 1:<br />
+</p>
+<span class="math display">\[\begin{split}
+\log\left(\frac{\pi}{1-\pi}\right) = \log\left(\frac{0.73}{1-0.27}\right) \approx 1  .
+\end{split}\]</span>
+Setting a range for this normal prior, we have a vague understanding of the <em>log(odds of returning)</em> ranges from roughly 0.3 to 1.7 <span class="math inline">\((1 \pm 2*0.35)\)</span>. In other words, the odds of a typical pitcher playing after at the MLB level following surgery could be somewhere between: <span class="math inline">\((e^{0.3}, e^{1.7}) \approx (1.35, 5.474)\)</span>. Thus the <em>probability</em> of the average pitcher returning to pitch at the MLB level could be somewhere between about 0.57 and 0.85:<br />
+
+<span class="math display">\[\begin{split}
+\left(\frac{1.35}{1 + 1.35}, \frac{5.474}{1 + 5.474}\right) \approx (0.5747, 0.8455).
+\end{split}\]</span>
+<p>We have only a very basic understanding of each predictor’s relationship with a player’s likelihood of returning to pitch at the MLB level and thus will utilize weakly informative priors for these coefficients. As a whole, the model can be summarized as:<br />
+</p>
+<span class="math display">\[\begin{array}{lcrl} 
+\text{data:} &amp; \hspace{.01in} &amp; Y_i|\beta_0,\beta_1 &amp; \stackrel{ind}{\sim} \text{Bern}(\pi_i) \;\; \text{ with } \;\; \log\left(\frac{\pi_i}{1 - \pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \beta_4 X_{i4} + \beta_5 X_{i5} + \beta_6 X_{i6}\\
+\text{priors:} &amp; &amp; \beta_{0c}  &amp;  \sim N\left(1, 0.35^2 \right)  \\
+               &amp; &amp; \beta_1  &amp; \sim N\left(5.0209, 2.5^2 \right) \\
+               &amp; &amp; \beta_2  &amp; \sim N\left(0.00587, 2.5^2 \right) \\
+               &amp; &amp; \beta_3  &amp; \sim N\left(4.0813, 2.5^2 \right) \\
+               &amp; &amp; \beta_4  &amp; \sim N\left(5.556, 2.5^2 \right) \\
+               &amp; &amp; \beta_5  &amp; \sim N\left(10.639, 2.5^2 \right) \\
+               &amp; &amp; \beta_6  &amp; \sim N\left(0.7503, 2.5^2 \right) \\
+\end{array}\]</span>
+</div>
 </div>
 
 

@@ -447,7 +447,8 @@ debuts2021$Debut &lt;-as.Date(with(debuts2021,paste(yeard,monthd,dayd,sep=&quot;
 pitch_debuts &lt;- bind_rows(debuts1987, debuts1988, debuts1989, debuts1990, debuts1991, debuts1992, debuts1993, debuts1994, debuts1995, debuts1996, debuts1997, debuts1998, debuts1999, debuts2000, debuts2001, debuts2002, debuts2003, debuts2004, debuts2005, debuts2006, debuts2007, debuts2008, debuts2009, debuts2010, debuts2011, debuts2012, debuts2013, debuts2014, debuts2015, debuts2016, debuts2017, debuts2018, debuts2019, debuts2020, debuts2021)
 
 #write_rds(pitch_debuts, &quot;data/pitch_debuts.rds&quot;)</code></pre>
-<p>Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the <code>pitch_debuts</code> data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below: - John Ericks from 1967-06-16 to 1967-09-16<br />
+<p>Next, the draft data dating back to 1965 was loaded in. This data would later be joined with the <code>pitch_debuts</code> data set by player name and birth date. However, after joining I noticed a few players that did not join property due to slightly mismatched birth dates. As a result, I changed these ten players to have birth dates matching those of Baseball Reference. These ten dates have already been changed in the linked draft data file, but the changes made are listed below:<br />
+- John Ericks from 1967-06-16 to 1967-09-16<br />
 - T.J. Mathews from 1970-01-19 to 1970-01-09<br />
 - Bryan Ward from 1972-01-25 to 1972-01-28.<br />
 - Rafael Carmona from 1972-10-02 to 1971-10-02<br />

@@ -1,5 +1,5 @@
 ---
-title: "Pitcher Career Trajectory in the MLB and Tommy John Surgery"
+title: "Tommy John Surgery and its Relationship to MLB Pitcher Career Trajectory"
 author: "Erin Franke"
 output:
   html_document:
@@ -34,6 +34,11 @@ tidymodels_prefer()
 
 seasonal_complete <- read_csv("data/seasonal_complete.csv")
 ```
+
+\
+\
+
+## Introduction
 
 A pitcher's success can vary dramatically over the course of their major league career. 2015 Cy Young [Jake Arrieta](https://www.baseball-reference.com/players/a/arrieja01.shtml) had tremendous success in the middle of his career, but began his career with the Orioles where he pitched at levels far below league average. In more recent seasons he has also struggled. To measure a pitcher's success overtime, we might look at ERA+, which takes a player's earned run average each season and normalizes it across the entire league. An ERA+ of 100 represents league average, 150 and 80 would respectively represent 50% better and 20% worse than league average. Despite many still considering Arrieta legendary, the quality of his pitching has been slowly declining since his Cy Young season it is clear his value to a team is not the same as it once was. Arrieta's career trajectory can be seen on the graph on the left below, but this path is just one example of the type of trajectory a player's career may take. Current Atlanta Brave [Drew Smyly](https://www.baseball-reference.com/register/player.fcgi?id=smyly-001tod) has had a lot of variability in his success as a pitcher, as seen on the graph on the right. While his first four seasons appeared quite strong, Smyly performed below average 2016 and 2019 and since has had a little more success.
 
@@ -94,7 +99,11 @@ codebook %>%
 
 ## Understanding career trajectory
 
+
+### Age distribution
+
 In understanding career trajectory and longevity, we should first understand the age distribution of players in the MLB. Using all pitchers that played in the 2021 season, we get the following age distribution and see most pitchers are aged between their low twenties and low thirties. 
+\
 ```{r, echo=FALSE}
 seasonal_complete %>%
   filter(Year == 2021) %>%
@@ -107,7 +116,10 @@ seasonal_complete %>%
         axis.title.x = element_text(family = "mono", size = 11))
 ```
 
+### Career length
+
 In trying to understand the impact of having Tommy John surgery on a player's career, we should seek to understand if there are differences in **career length** for players that receive the surgery. To do this, we compare the career length in seasons of players that did not have surgery at any point in their career to those that had surgery between their draft and debut date. We remove players that had surgery in the MLB for this graph - the fact that they made it far enough in their MLB career to have a surgery during it is an indicator of career length. Additionally, we do not include players that had surgery before being drafted as scouts deemed them worthy enough to be drafted despite their surgery. When looking at the graph, there do not seem to be any significant differences.
+\
 ```{r, echo=FALSE}
 seasonal_complete %>%
   filter(surgery1time %!in% c("after debut", "before draft")) %>%
@@ -120,7 +132,7 @@ seasonal_complete %>%
   geom_density(alpha = 0.5)+
   theme_classic()+
   scale_fill_manual(values = c("deepskyblue4", "sienna2"))+
-  labs(x="career length (seasons)", y="", title = "MLB career length (seasons) averages a similar length for players that<strong><span style='color:sienna2'> did not have Tommy John</span></strong></b>", subtitle = "<strong><span style='color:sienna2'> surgery before debuting </span></strong></b>in comparison to <strong><span style='color:deepskyblue4'>those that had surgery between draft and debut</span></strong></b>")+
+  labs(x="career length (seasons)", y="", title = "MLB career length (seasons) averages similar length for players that<strong><span style='color:sienna2'> didn't have Tommy John</span></strong></b>", subtitle = "<strong><span style='color:sienna2'> surgery before debuting </span></strong></b>in comparison to <strong><span style='color:deepskyblue4'>those that had surgery between draft and debut</span></strong></b>")+
   theme(plot.title = element_markdown(size = 9, family = "mono"),
         plot.subtitle = element_markdown(size = 9, family = "mono"), 
         plot.title.position = "plot",
@@ -128,11 +140,49 @@ seasonal_complete %>%
         axis.title.x = element_text(family = "mono", size = 9))
 ```
 
+### Performance
+
 For players having their first Tommy John surgery following their MLB debut, it could be interesting to understand how their performance compares before versus after their surgery. In the following graph, we can notice that players average more innings following their surgery if it is done while they are younger. On the other hand, as players age into their thirties they almost always average fewer innings after the surgery. Players that did not play following their surgery are shown in red, but this trend holds even just looking at the blue dots, which represent players that play again after their surgery.
+\
 ```{r, echo=FALSE}
 diffIP <- seasonal_complete %>%
   filter(surgery1time == "after debut") %>%
   group_by(Player, statsTime) %>%
+  summarize(avg_IP = round(mean(IP),2), 
+            surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
+  select(Player, surgery_age, statsTime, avg_IP) %>%
+  distinct() %>%
+  pivot_wider(id_cols = Player:surgery_age, names_from = statsTime, values_from = avg_IP) 
+
+diffIP$after <- replace_na(diffIP$after, 0)
+
+diffIP %>%
+  mutate(difference = after - before, 
+         leaveMLB = case_when(after == 0 ~ "leave MLB", 
+                              TRUE ~ "continue playing")) %>%
+  ggplot(aes(x=surgery_age, y= difference, color = leaveMLB))+
+  geom_point()+
+  theme_classic()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") %>%
+  labs(title = "Pitchers tend to average fewer seasonal innings post Tommy John surgery than prior to it", subtitle = "Players that leave the MLB completely are shown in<strong><span style='color:red'> red</span></strong></b>", x = "surgery age", y = "Average seasonal IP after - before surgery")+
+  theme(plot.title = element_markdown(size = 9, family = "mono"),
+        plot.subtitle = element_markdown(size = 9, family = "mono"),
+        plot.title.position = "plot", 
+        axis.title.x = element_markdown(size = 8, family = "mono"), 
+        axis.title.y = element_markdown(size = 8, family = "mono"),
+        legend.position = "none")+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_color_manual(values = c("navy", "red"))
+```
+
+A question that might be prompted when understanding this graph is how the typical innings trajectory of a player that has not had Tommy John surgery plays out. 
+```{r, eval=FALSE, echo=FALSE}
+seasonal_complete %>%
+  filter(is.na(surgery1time)) %>%
+  group_by(Player) %>%
+  mutate(split = sample_n(1))
+
+
   summarize(avg_IP = round(mean(IP),2), 
             surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years")) %>%
   select(Player, surgery_age, statsTime, avg_IP) %>%
@@ -160,4 +210,221 @@ diffIP %>%
   scale_color_manual(values = c("navy", "red"))
 ```
 
-A question that might be prompted when understanding this graph is 
+## Playing after Tommy John surgery
+
+Tommy John surgery is a major procedure to go through, and thus it is not certain that a pitcher will return to the MLB following this surgery. For the 318 pitchers in this study that received Tommy John surgery following their MLB debut, 233 (73.27%) of them returned to the MLB to play again. These 318 pitchers all had the surgery prior to 2020, as many of those that received the surgery in 2020 and certainly in 2021 will not yet have recovered and returned major league baseball. 
+
+```{r, include=FALSE}
+#filter for players that had surgery after their debut but in years prior to 2020. Group by player and summarize their number of seasons after and before surgery, as well as create an indicator variable for if they play after surgery. 
+play_post_surgery <- seasonal_complete %>%
+  filter(surgery1time == "after debut", surgery1Year < 2020) %>%
+  group_by(Player) %>%
+  count(statsTime) %>%
+  pivot_wider(id_cols = Player, names_from = statsTime, values_from = n) %>%
+  mutate(played_after = case_when(is.na(after) == TRUE ~ 0, 
+                                  TRUE ~ 1))
+
+# 73.27% of players play following their surgery
+play_post_surgery %>% 
+  tabyl(played_after)
+
+#join with seasonal complete to get more information about these players. Currently, the data is no longer grouped by player. 
+seasonal_SurgPostdebut <- seasonal_complete %>%
+  filter(surgery1time == "after debut", surgery1Year < 2020) %>%
+  left_join(play_post_surgery, by = "Player")
+
+#filter for seasonal stats before surgery. Eliminate any WHIPS of Inf. Group by player and find their age at surgery. 
+stats <- seasonal_SurgPostdebut %>%
+  filter(statsTime == "before", WHIP < 100) %>%
+  group_by(Player) %>%
+  mutate(surgery_age = time_length(difftime(`Surgery 1`, birth_date), "years"), 
+         games_started = sum(GS), 
+         games = sum(G), 
+         starter = case_when(games_started/games < 0.5 ~ 0, 
+                                TRUE ~ 1), 
+         starter = as.factor(starter), 
+         totalIP = sum(IP),
+         kRate = case_when(totalIP >=1 ~ sum(SO)/totalIP, 
+                           TRUE ~ sum(SO)), #prevents krate of 5 for player that had one strikeout and pitched 0.2 innings
+         totwalks = sum(BB), 
+         totH = sum(H), 
+         avgWHIP = (totwalks+totH)/totalIP, 
+         played_after = as.factor(played_after)) %>%
+  select(hs_draftee, played_after, surgery_age, starter, kRate, totalIP, avgWHIP) %>%
+  distinct()
+```
+
+
+### Exploratory Data Analysis
+\
+If a team has a player decide to undergo Tommy John surgery, or is debating signing a player needing surgery, it would be helpful to understand what might be correlated with a player returning to the majors following their surgery. \
+
+A few possible performance based variables to look into could be the pitcher's **average strikeout rate** and **average WHIP**, as well as **total innings pitched** prior to the surgery. We see that pitchers that return to the MLB tend to have slightly lower (better) WHIPs and slightly higher (better) strikeout rates. Additionally, the innings pitched variable appears highly informative. 75.29% of the pitchers that did not return to the MLB pitched fewer than 200 innings prior to their surgery. In comparison, only 51.5% of the pitchers that played after pitched less than 200 innings. 
+
+```{r, include=FALSE}
+stats %>%
+  mutate(manyIP = case_when(totalIP >= 200 ~ "high", 
+                            TRUE ~ "low")) %>%
+  group_by(manyIP, played_after) %>%
+  count()
+```
+
+\
+\
+```{r, echo=FALSE, figures-side2, fig.show="hold", out.width="50%"}
+stats %>%
+  filter(avgWHIP < 2.5, avgWHIP > 0.5) %>%
+  ggplot(aes(x=avgWHIP, fill = played_after))+
+  geom_density(alpha=0.5) +
+  theme_classic()+
+  labs(x= "average WHIP", y = "", title = "Average WHIP prior to Tommy John surgery comparing players that <strong><span style='color:navy'>play again</span></strong></b> versus <strong><span style='color:red'>don't</span></strong></b>")+
+  scale_fill_manual(values = c("navy", "red"))+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =9), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size=9))
+
+stats %>%
+  ggplot(aes(x=kRate, fill = played_after))+
+  geom_density(alpha=0.5) +
+  theme_classic()+
+  labs(x= "strikeout rate per inning", y = "", title = "Average K rate prior to Tommy John surgery comparing players that <strong><span style='color:navy'>play again</span></strong></b> versus <strong><span style='color:red'>don't</span></strong></b>")+
+  scale_fill_manual(values = c("navy", "red"))+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =9), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size=9))
+```
+
+```{r, echo=FALSE}
+stats %>%
+  ggplot(aes(x=totalIP, fill = played_after))+
+  geom_density(alpha=0.5) +
+  theme_classic()+
+  labs(x= "total IP", y = "", title = "Total IP prior to Tommy John surgery comparing players that <strong><span style='color:navy'>play again</span></strong></b> versus <strong><span style='color:red'>don't</span></strong></b>")+
+  scale_fill_manual(values = c("navy", "red"))+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =9), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size=9))
+```
+
+\
+In addition to performance metrics, we can see if there is any relationship between a pitcher playing after their surgery and their role (starter or reliever) as well as whether they were a high school draftee. 
+
+```{r, echo=FALSE, figures-side3, fig.show="hold", out.width="50%"}
+stats %>%
+  mutate(starter = recode(starter, "0" = "reliever", "1" = "starter")) %>%
+  ggplot()+
+  geom_mosaic(aes(x = product(played_after,starter), fill = played_after))  +
+  labs(x= "", y = "", title = "Starters <strong><span style='color:navy'>play after surgery</span></strong></b> more often than relievers")+
+  scale_fill_manual(values = c("navy", "red")) + 
+  theme_classic()+
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        plot.title = element_markdown(family = "mono", size =10), 
+        legend.position = "none")
+
+stats %>%
+  ggplot()+
+  geom_mosaic(aes(x = product(played_after,hs_draftee), fill = played_after))  +
+  labs(x= "", y = "", title = "High school draftees <strong><span style='color:navy'>play after surgery</span></strong></b> slightly more often than college or international picks")+
+  scale_fill_manual(values = c("navy", "red")) + 
+  theme_classic()+
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        plot.title = element_markdown(family = "mono", size =8), 
+        legend.position = "none")
+```
+
+A final variable to investigate is the age at which the player is having the Tommy John surgery. Below, we see that pitchers that pitch again tend to be slightly younger in age at the time of their surgery in comparison to those that do not play again. However, this difference is not quite as substantial as one might have originally thought.  
+\
+\
+```{r, echo=FALSE}
+stats %>%
+  ggplot(aes(x=surgery_age, fill = played_after))+
+  geom_density(alpha=0.5) +
+  theme_classic()+
+  labs(x= "surgery age", y = "", title = "Surgery age comparing players that <strong><span style='color:navy'>play again</span></strong></b> versus <strong><span style='color:red'>don't</span></strong></b>")+
+  scale_fill_manual(values = c("navy", "red"))+
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =10), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size=9))
+```
+
+
+### Introducing the model
+
+Having a basic understanding of some of these variables, we can now build a logistic regression model. In building this model, we will let $Y$ be a binary indicator of if the pitcher plays again at the MLB level following his Tommy John surgery, which occurs at probability $\pi$. Understanding the results of the exploratory data analysis, this model will utilize the following predictors: \
+
+- $X_1$: indicator variable for if a player is a **starter** (1) or **reliever** (0) \
+- $X_2$: continuous variable representing the **total number of innings pitched** by a player prior to their surgery \
+- $X_3$: continuous variable representing the player’s **average WHIP** prior to their surgery \
+- $X_4$: indicator variable of if a player was a **high school draftee** \
+- $X_5$: continuous variable representing a pitcher's **strikeout rate** prior to their surgery \
+- $X_6$: continuous variable for the **age at which a player got surgery** \
+
+
+### Setting the priors 
+
+```{r, echo=FALSE}
+#Independence between predictors?**. And it is okay to use normal priors for binary predictors correct?
+```
+
+
+Starting with the centered intercept $\beta_{0c}$, we recall our prior understanding that for the average player there is roughly a 73% chance of rain, i.e. $\pi \approx 0.73$. As a result, we can set the prior mean for $\beta_{0c}$ on the *log(odds)* scales to 1: \
+
+\begin{split}
+\log\left(\frac{\pi}{1-\pi}\right) = \log\left(\frac{0.73}{1-0.27}\right) \approx 1  .
+\end{split}
+
+Setting a range for this normal prior, we have a vague understanding of the *log(odds of returning)* ranges from roughly 0.3 to 1.7 $(1 \pm 2*0.35)$. In other words, the odds of a typical pitcher playing after at the MLB level following surgery could be somewhere between: $(e^{0.3}, e^{1.7}) \approx (1.35, 5.474)$. Thus the *probability* of the average pitcher returning to pitch at the MLB level could be somewhere between about 0.57 and 0.85: \
+\begin{split}
+\left(\frac{1.35}{1 + 1.35}, \frac{5.474}{1 + 5.474}\right) \approx (0.5747, 0.8455).
+\end{split}
+
+We have only a very basic understanding of each predictor's relationship with a player's likelihood of returning to pitch at the MLB level and thus will utilize weakly informative priors for these coefficients. As a whole, the model can be summarized as: \
+
+\begin{array}{lcrl} 
+\text{data:} & \hspace{.01in} & Y_i|\beta_0,\beta_1 & \stackrel{ind}{\sim} \text{Bern}(\pi_i) \;\; \text{ with } \;\; \log\left(\frac{\pi_i}{1 - \pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \beta_4 X_{i4} + \beta_5 X_{i5} + \beta_6 X_{i6}\\
+\text{priors:} & & \beta_{0c}  &  \sim N\left(1, 0.35^2 \right)  \\
+               & & \beta_1  & \sim N\left(5.0209, 2.5^2 \right) \\
+               & & \beta_2  & \sim N\left(0.00587, 2.5^2 \right) \\
+               & & \beta_3  & \sim N\left(4.0813, 2.5^2 \right) \\
+               & & \beta_4  & \sim N\left(5.556, 2.5^2 \right) \\
+               & & \beta_5  & \sim N\left(10.639, 2.5^2 \right) \\
+               & & \beta_6  & \sim N\left(0.7503, 2.5^2 \right) \\
+\end{array}
+
+```{r, echo=FALSE}
+played_after_mod <- stan_glm(played_after ~ starter + totalIP + avgWHIP + hs_draftee + kRate + surgery_age,
+                             data = stats, family = binomial,
+                             prior_intercept = normal(1, 0.35),
+                             prior = normal(0, 2.5, autoscale = TRUE),
+                             chains = 4, iter = 5000*2, seed = 84735, refresh=0)
+```
+
+```{r, include=FALSE}
+prior_summary(played_after_mod)$prior_intercept
+prior_summary(played_after_mod)$prior
+```
+
+```{r, include=FALSE}
+tidy(played_after_mod, effects = "fixed", conf.int = TRUE, conf.level = 0.80)
+```
+
+```{r, include=FALSE}
+mcmc_trace(played_after_mod)
+mcmc_dens_overlay(played_after_mod)
+mcmc_acf(played_after_mod)
+```
+
