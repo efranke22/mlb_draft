@@ -486,4 +486,196 @@ cv_accuracy <- classification_summary_cv(
 cv_accuracy$cv
 ```
 
+## Modeling seasonal success and trajectory
+
+Now that we have an understanding of what is correlated to a pitcher returning to pitch at the major league level following Tommy John surgery, we can attempt to look how seasonal success changes over a pitcher's career. This analysis will include both players that never had Tommy John surgery as well as players that had their first surgery after their debut, and will overall only focus on starters due to the systematic differences in longevity between starters and relievers. To measure pitcher "success", we will use WHIP. An ideal metric would be WAR (Wins Above Replacement) as it captures both pitcher performance and is cumulative so also accounts for starters that are able to pitch more innings. However, this metric did not come with the seasonal data downloaded from Baseball Reference. From the metrics we have, slugging percentage against is the next best thing. Slugging percentage against represents an average of the total number of bases a pitcher gives up per at bat. Thus, it shows how well a pitcher kept the opposing team of the basepaths as well as how well the pitcher limited their power. 
+
+For this analysis, we have data on 2,674 players and their 12,691 seasons that occurred between 1987 and 2021. Of these 2,674 players, 754 are starters and together they played 4,491 seasons. We will narrow this number a bit more by filtering out potentially active players (anyone that's played since 2019) and only analyzing complete careers - doing this leaves us at 515 players and 3,143 seasons. While there was no indicator variable provided in the data for if someone is a starter, I created my own by calling a player a starter if they started at least 50% of the games they pitched in over their career. This may not accurately capture players who transitioned roles from starter to reliever or vice versa during their career, but given the quantity of players in this analysis it seemed like a simple and largely accurate way to distinguish players. 
+```{r, results = "hide"}
+seasonal_complete <- seasonal_complete %>%
+  group_by(Player) %>%
+  mutate(totalGS = sum(GS), 
+         totalG = sum(G), 
+         starter_reliever = case_when(totalGS/totalG < 0.5 ~ "reliever", 
+                                TRUE ~ "starter"))
+
+#number of total players
+seasonal_complete %>%
+  group_by(Player) %>%
+  count() %>%
+  nrow()
+
+#number seasons
+nrow(seasonal_complete)
+
+#define seasonal complete (starters)
+seasonal_complete_starters <- seasonal_complete %>%
+  filter(starter_reliever == "starter")
+
+#number of starters
+seasonal_complete_starters %>%
+  group_by(Player) %>%
+  count() %>%
+  nrow()
+
+# number of seasons starters played
+seasonal_complete_starters %>%
+  filter(starter_reliever == "starter") %>% 
+  nrow()
+
+# remove active players and count number of seasons
+seasonal_complete_starters %>%
+  group_by(Player) %>%
+  mutate(lastYear = max(Year)) %>%
+  filter(lastYear <= 2019) %>% 
+  nrow()
+
+# number of non-active players
+seasonal_complete_starters %>%
+  group_by(Player) %>%
+  mutate(lastYear = max(Year)) %>%
+  filter(lastYear <= 2019) %>%
+  group_by(Player) %>%
+  count() %>%
+  nrow()
+
+#define dataset we will work with 
+starters19 <- seasonal_complete_starters %>%
+  group_by(Player) %>%
+  mutate(lastYear = max(Year)) %>%
+  filter(lastYear <= 2019)
+```
+
+### Exploratory Data Analysis 
+
+We will first start by looking at how slugging percent against (will be abbreviated SLG from now on) varies with age for starting pitchers. As seen in the plot below, there appears to be a very weak relationship between pitcher age and SLG, with SLG slightly increasing as pitcher age increases. However, this plot has a few issues. First, it pools all seasons together and ignores the data's grouped structure: an individual pitcher's SLG one season will be have some correlation to their SLG the following seasons. Second, there is some kind of selection bias happening with age. The few pitchers that are pitching in their late 30s and early 40s are likely doing so because they've had a very successful career! 
+```{r}
+starters19 %>%
+  ggplot(aes(x=Age, y=SLG)) +
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_classic()+
+  labs(x = "pitcher age", y="SLG", title = "Pitcher age versus slugging percerntage")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =12), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11))
+```
+
+To minimize these issues, we will look at the data in its grouped format using hierarchical modeling. We can start by taking a sample of 80 starters and plotting the smoothed linear trend in their SLG over the course of their career. Looking at the plot, it appears that for the majority of players SLG tends to increase over the course of their career, indicating their performance is worsening with age. 
+```{r}
+slopes <-starters19 %>% 
+    group_by(Player) %>% 
+    do({
+      mod = lm(SLG ~ Age, data = .)
+      data.frame(Intercept = coef(mod)[1],
+                 Slope = coef(mod)[2])
+    })
+
+starters19 %>%
+  left_join(slopes, by = "Player") %>%
+  arrange(Player) %>%
+  group_by(Player) %>%
+  mutate(group_id = cur_group_id(), 
+         positive_slope = as.factor(case_when(Slope >0 ~ 1, 
+                                    TRUE ~ 0))) %>%
+  filter(group_id <= 80) %>%
+  ggplot(aes(x=Age, y=SLG, group = Player))+
+  geom_smooth(aes(color = positive_slope), method = "lm", se = FALSE, size = 0.5)+
+  theme_classic()+
+  labs(title = "SLG seems to <strong><span style='color:red'>worsen</span></strong></b> with age more often than <strong><span style='color:navy'>improve</span></strong></b>")+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size =12), 
+        legend.position = "none", 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11))+
+  scale_color_manual(values = c("red", "navy"))
+```
+
+With some very basic information about SLG trajectory overtime, we will now look into the impact on SLG of undergoing Tommy John surgery at a point in a player's career. For the 515 players we are analyzing in this study, 85 of them underwent their first Tommy John surgery at some point after their debut. For these players, we will create an indicator variable `seasonTime` for each season they played. This indicator variable will take one of three values. 
+- "no surgery": any season taking place prior to their surgery \
+- "short after": any season taking place within 3 years after the year of their surgery \
+- "long after": any season taking place at least 3 years after the year of their surgery \
+For players that did not undergo surgery, all of their seasons will be "no surgery" seasons. 
+
+```{r, results = "hide"}
+# number of players that underwent Tommy John surgery after their debut
+starters19 %>%
+  filter(surgery1time == "after debut") %>%
+  group_by(Player) %>%
+  count() %>%
+  nrow()
+
+# create the seasonTime variable
+starters19 <- starters19 %>%
+  mutate(seasonTime = case_when(surgery1time == "after debut" & (Year - surgery1Year) <= 3 & (Year - surgery1Year) > 0 ~ "short after",
+                               surgery1time == "after debut" & (Year - surgery1Year) > 3 ~ "long after",
+                               TRUE ~ "no surgery"))
+```
+
+For the 85 starters that underwent surgery, the average number of seasons prior the surgery was 5.15. This distribution of number of seasons before surgery can be seen in the density plot below. Of these 85 starters, 25 did not return to play again the MLB level, and only 35 played "long after". 33 players played in all three time periods (two players that played "long after" did not at all "short after" their surgery). 
+```{r, results = "hide"}
+breakdown <- starters19 %>%
+  filter(surgery1time == "after debut") %>%
+  group_by(Player, seasonTime) %>%
+  count() %>%
+  pivot_wider(id_cols = Player, names_from = seasonTime, values_from = n) %>%
+  mutate(`short after` = coalesce(`short after`, 0),
+         `long after` = coalesce(`long after`, 0)) %>%
+  ungroup() 
+
+# number not playing after surgery
+breakdown %>%
+  mutate(after = `short after` + `long after`) %>%
+  group_by(`after`) %>%
+  count() %>%
+  head(1)
+
+# number not playing long after surgery
+breakdown %>%
+  group_by(`long after`) %>%
+  count() %>%
+  head(1)
+```
+
+```{r}
+# density plot of seasons prior to surgery
+breakdown %>%
+  ggplot(aes(x=`no surgery`))+
+  geom_density(fill = "lightcyan3")+
+  labs(x= "seasons prior to surgery", title = "Number of seasons prior to surgery for 85 MLB starters")+
+  theme_classic()+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size = 12), 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11))
+  
+```
+
+For the 33 starters that played in all three time periods, we plot the trend in SLG across the three periods below, grouped by player. 30 players are included that pitched at least 10 innings in each of the three time periods. For most players, SLG appears to *increase slightly* as they move into the period of "long after" their surgery. We see two major outliers in SLG prior to having surgery. Matt Riley is on the high end with a SLG of 0.756, and this number is coming from only pitching 11 innings prior to his surgery. On the other hand, Jose Fernandez is on the low end with a phenomenal SLG against of 0.272 over 223.4 innings pitched in two seasons.
+
+```{r}
+breakdown %>%
+  filter(`long after` > 0 & `short after` >0) %>%
+  left_join(seasonal_complete_starters, by = "Player") %>%
+  select(-c(`long after`, `no surgery`, `short after`)) %>%
+   mutate(seasonTime = case_when(surgery1time == "after debut" & (Year - surgery1Year) <= 3 & (Year - surgery1Year) > 0 ~ 2,
+                               surgery1time == "after debut" & (Year - surgery1Year) > 3 ~ 3,
+                               TRUE ~ 1)) %>%
+  group_by(Player, seasonTime) %>%
+  summarize(avgSLG = weighted.mean(SLG, w=IP), totalIP = sum(IP)) %>%
+  filter(Player %!in% c("Erik Bedard", "Joe Wieland", "Shawn Hill")) %>% # did not pitch at least 10 innings per period 
+  ggplot(aes(x=seasonTime, y=avgSLG, group = Player))+
+  geom_point()+
+  geom_smooth(color = "navy")+
+  labs(title = "SLG against across for 30 starters over career", y = "SLG against")+
+  scale_x_continuous(breaks = 1:3, labels = c("no surgery", "short after", "long after"))+
+  theme_classic()+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size = 12), 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11))
+```
+
 
