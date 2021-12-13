@@ -745,7 +745,7 @@ Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij
 \beta_2  & \sim N(0, 0.00077^2) \\
 \beta_3  & \sim N(0, 0.8954^2) \\
 \beta_4  & \sim N(0, 0.87907^2) \\
-\sigma_y & \sim \text{Exp}(0.072) \\
+\sigma_y & \sim \text{Exp}(1) \\
 \sigma_0 & \sim \text{Exp}(1). \\
 \end{split}
 \end{equation}
@@ -786,12 +786,19 @@ prior_summary(slgMod)$prior
 
 ### Checking the diagnostics 
 
-Just like with the logistic regression model, we must check the diagnostics of the simulation.
+Just like with the logistic regression model, we must check the diagnostics of the simulation. Plotting the trace plots for the global parameters below on the left, we see no discernible trends or patterns, which is what we want, implying that our Markov chains are stable. Additionally, the autocorrelation plots shown below on the right shows that our Markov chain sufficiently mimics the behavior of an independent sample. We also learn from a test of R-hat that there is evidence of parallel chains, as variability between chains is roughly equal to that within chains for all parameters. 
+
+```{r, figures-side5, fig.show="hold", out.width="50%"}
+columns <- as.data.frame(slgMod)[,c(1:5, 445:446)]
+mcmc_trace(columns)
+mcmc_acf(columns)
+```
 
 ```{r, results = "hide"}
-neff_ratio(slgMod)
-rhat(slgMod)
+rhat(slgMod) %>%
+  head(5)
 ```
+
 
 ### Posterior results
 
@@ -812,7 +819,30 @@ tidyMod %>%
   ) 
 ```
 
-With this summary, we see that the 80% credible interval on the `Age` coefficient includes 0. In other words, we do not have evidence that the typical pitcher tends get worse with age. Both `seasonTime` coefficients are significant. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better *short after* their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better *long after* their surgery in comparison to no surgery. As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing "short after" his surgery to "long after" it. 
+With this summary, we see that the 80% credible interval on the `Age` coefficient includes 0. However, the age squared (`age2`) coefficient is significant. Given that these coefficients work together, there is evidence that the typical pitcher tends get worse with age (holding surgery status constant). This relationship can be seen in the plot below of 200 posterior plausible global model lines. 
+
+```{r}
+B0 <- tidyMod$estimate[1]
+B1 <- tidyMod$estimate[2]
+B2 <- tidyMod$estimate[3]
+slopeB = B1 + B2
+slgData %>%
+  add_fitted_draws(slgMod, n = 200, re_formula = NA) %>%
+  ggplot(aes(x = Age, y = SLG)) +
+    geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+    geom_abline(intercept = B0, slope = slopeB, color = "blue")+
+  labs(title = "Possible posterior relationship between Age and SLG")+
+  theme_classic()+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size = 12), 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11), 
+        legend.title = element_markdown(family="mono", size = 11), 
+        legend.text = element_markdown(family="mono", size = 11))
+```
+
+
+Both `seasonTime` coefficients are significant. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better *short after* their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better *long after* their surgery in comparison to no surgery. As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing "short after" his surgery to "long after" it. 
 
 ```{r}
 mcmc_areas(slgMod, pars = vars(starts_with("season")), prob = 0.8) + 
@@ -919,9 +949,9 @@ Unfortunately, I was unable to obtain cross-validated metrics of posterior predi
 
 Throughout this analysis, we have covered a lot. Going back to the results of the original logistic regression model, we understand that the more innings a player pitches and the higher a strikeout rate they have, the more likely they are to pitch again at the MLB level following their surgery (holding all variables constant). We also learned players are less and less likely to play again at the MLB level as they have surgery at older ages (holding all other variables constant), which is not necessarily unexpected. In the future, we could brainstorm additional variables that may increase the predictive power of this model. It could also be interesting to run this model with all pitchers (instead of just those that have had Tommy John surgery) and investigate the relationship between returning to pitch the following season and pitcher age, taking into account past performance metrics and surgery status. 
 
-Thinking about the second model, we were unable to find a statistically significant relationship between age and pitcher performance, and relationship between surgery status and SLG appeared practically insignificant. The nice thing about this model is that it allows us to predict seasonal SLGs with reasonable error. However, in the future a few modifications could be made to improve this model: \
-- Include draft round as a predictor variable \
-- Run the model with varying slopes, allowing the relationship between pitcher age and SLG as well as pitcher surgery status and SLG to vary from pitcher to pitcher \
-- Use all players (including those that had Tommy John surgery before reaching the majors) and data from currently active players so that we can predict performance for active players in their upcoming 2022 or 2023 season \
+Thinking about the second model, we found a statistically significant relationship between age and pitcher performance. The relationship between surgery status and SLG appeared practically insignificant. The nice thing about this model is that it allows us to predict seasonal SLGs with reasonable error. However, in the future a few modifications could be made to improve this model: \
+  - Include draft round as a predictor variable \
+  - Run the model with varying slopes, allowing the relationship between pitcher age and SLG as well as pitcher surgery status and SLG to vary from pitcher to pitcher \
+  - Use all players (including those that had Tommy John surgery before reaching the majors) and data from currently active players so that we can predict performance for active players in their upcoming 2022 or 2023 season \
 
 There is still **so much** to be learned about the complex relationship between Tommy John surgery, aging, and pitcher performance. While there are flaws in this analysis (like most analyses), it is a step in the right direction to understanding this complicated relationship. And in the Bayesian spirit, I plan continue to update my knowledge about the Tommy John surgery, aging, and pitcher performance using additional data, modeling techniques, and baseball IQ in the future. 
