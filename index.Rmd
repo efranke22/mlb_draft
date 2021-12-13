@@ -75,8 +75,8 @@ This analysis uses data from all players drafted since 1987, the first year that
 
 The main variables I will use in this analysis are displayed in the codebook below. They come from my final data set, which is called `seasonal_complete`. My process to create this data set is fully documented in the data cleaning section of this website. 
 ```{r}
-codebook = data.frame(Variable = c("Player", "Year", "Age", "hs_draftee", "birth_date", "Debut", "round", "surgery1Year", "statsTime", "surgery1time", "surgery_age", "ERA+", "G", "GS", "IP", "WHIP", "kRate"), 
-                      Meaning = c("name of pitcher", "year of MLB season", "player age during season", "whether the player was drafted in high school", "player date of birth", "player MLB debut data", "the player's draft round", "the year the player had their first Tommy John surgery while in the MLB", "whether the stats for this season come before or after the player's first surgery", "whether the player's first surgery came before draft, between draft & debut, or after debut", "age of pitcher at first surgery", "adjusts a pitcher's ERA according to the pitcher's ballpark and the ERA of the pitcher's league", "games played", "games started", "innings pitched", "number of walks + hits per inning pitched", "average number of strikeouts per inning"))
+codebook = data.frame(Variable = c("Player", "Year", "Age", "hs_draftee", "birth_date", "Debut", "seasonTime", "surgery1Year", "statsTime", "surgery1time", "surgery_age", "ERA+", "G", "GS", "IP", "WHIP", "kRate", "SLG"), 
+                      Meaning = c("name of pitcher", "year of MLB season", "player age during season", "whether the player was drafted in high school", "player date of birth", "player MLB debut data", "the season's stats occured without surgery, short after surgery, or long after surgery", "the year the player had their first Tommy John surgery while in the MLB", "whether the stats for this season come before or after the player's first surgery", "whether the player's first surgery came before draft, between draft & debut, or after debut", "age of pitcher at first surgery", "adjusts a pitcher's ERA according to the pitcher's ballpark and the ERA of the pitcher's league", "games played", "games started", "innings pitched", "number of walks + hits per inning pitched", "average number of strikeouts per inning", "total number of bases a pitcher gives up per at bat"))
 codebook %>%
   gt() %>%
   tab_header(
@@ -85,11 +85,11 @@ codebook %>%
   tab_style(
     style = cell_fill(color = "honeydew"),
     locations = cells_body(
-      rows = Variable %in% c("Player", "Age", "birth_date", "round", "statsTime", "surgery_age", "G", "IP", "kRate"))) %>%
+      rows = Variable %in% c("Player", "Age", "birth_date", "seasonTime", "statsTime", "surgery_age", "G", "IP", "kRate"))) %>%
   tab_style(
     style = cell_fill(color = "lightcyan3"),
     locations = cells_body(
-      rows = Variable %!in% c("Player", "Age", "birth_date", "round", "statsTime", "surgery_age", "G", "IP", "kRate"))) %>%
+      rows = Variable %!in% c("Player", "Age", "birth_date", "seasonTime", "statsTime", "surgery_age", "G", "IP", "kRate"))) %>%
   tab_options(
     table.font.size = px(13L)
   )
@@ -490,7 +490,9 @@ cv_accuracy$cv
 
 Now that we have an understanding of what is correlated to a pitcher returning to pitch at the major league level following Tommy John surgery, we can attempt to look how seasonal success changes over a pitcher's career. This analysis will include both players that never had Tommy John surgery as well as players that had their first surgery after their debut, and will overall only focus on starters due to the systematic differences in longevity between starters and relievers. To measure pitcher "success", we will use WHIP. An ideal metric would be WAR (Wins Above Replacement) as it captures pitcher performance and is cumulative so accounts for starters that are able to pitch more innings. However, this metric did not come with the seasonal data downloaded from Baseball Reference. From the metrics we have, slugging percentage against is the next best thing. Slugging percentage against represents an average of the total number of bases a pitcher gives up per at bat. Thus, it shows how well a pitcher kept the opposing team of the basepaths as well as how well the pitcher limited their power. 
 
-For this analysis, we have data on 2,674 players and their 12,691 seasons that occurred between 1987 and 2021. Of these 2,674 players, 754 are starters and together they played 4,491 seasons. We will narrow this number a bit more by filtering out potentially active players (anyone that has played in 2020 or 2021) to only analyze complete careers - doing this leaves us at 515 players and 3,143 seasons. While there was no indicator variable provided in the data for if someone is a starter, I created my own by calling a player a starter if they started at least 50% of the games they pitched in over their career. This may not accurately capture players who transitioned roles from starter to reliever or vice versa during their career, but given the quantity of players in this analysis it seemed like a simple and largely accurate way to distinguish players. 
+For this analysis, we have data on 2,674 players and their 12,691 seasons that occurred between 1987 and 2021. Of these 2,674 players, 754 are starters and together they played 4,491 seasons. We will narrow this number a bit more by filtering out potentially active players (anyone that has played in 2020 or 2021) to only analyze complete careers, and will filter out anyone that had Tommy John surgery prior to reaching the MLB. Altogether, this leaves us with 481 players and 3,011 seasons. 
+
+While there was no indicator variable provided in the data for if someone is a starter, I created my own by calling a player a starter if they started at least 50% of the games they pitched in over their career. This may not accurately capture players who transitioned roles from starter to reliever or vice versa during their career, but given the quantity of players in this analysis it seemed like a simple and largely accurate way to distinguish players. 
 ```{r, results = "hide"}
 seasonal_complete <- seasonal_complete %>%
   group_by(Player) %>%
@@ -523,18 +525,20 @@ seasonal_complete_starters %>%
   filter(starter_reliever == "starter") %>% 
   nrow()
 
-# remove active players and count number of seasons
+# remove active players and people that had TJ surgery before debut, count number of seasons
 seasonal_complete_starters %>%
   group_by(Player) %>%
   mutate(lastYear = max(Year)) %>%
-  filter(lastYear <= 2019) %>% 
+  filter(lastYear <= 2019, 
+         surgery1time == "after debut" | is.na(surgery1time)) %>% 
   nrow()
 
-# number of non-active players
+# see number of players we have
 seasonal_complete_starters %>%
   group_by(Player) %>%
   mutate(lastYear = max(Year)) %>%
-  filter(lastYear <= 2019) %>%
+  filter(lastYear <= 2019, 
+         surgery1time == "after debut" | is.na(surgery1time)) %>% 
   group_by(Player) %>%
   count() %>%
   nrow()
@@ -543,7 +547,8 @@ seasonal_complete_starters %>%
 starters19 <- seasonal_complete_starters %>%
   group_by(Player) %>%
   mutate(lastYear = max(Year)) %>%
-  filter(lastYear <= 2019)
+  filter(lastYear <= 2019, 
+         surgery1time == "after debut" | is.na(surgery1time))
 ```
 
 ### Exploratory Data Analysis 
@@ -563,7 +568,7 @@ starters19 %>%
         axis.title.y = element_markdown(family="mono", size = 11))
 ```
 
-To minimize these issues, we will look at the data in its grouped format using hierarchical modeling. We can start by taking a sample of 80 starters and plotting the smoothed linear trend in their SLG over the course of their career. Looking at the plot, it appears that for the majority of players SLG tends to increase over the course of their career, indicating their performance is worsening with age. 
+To minimize these issues, we will look at the data in its grouped format. We can start by taking a sample of 80 starters and plotting the smoothed linear trend in their SLG over the course of their career. Looking at the plot, it appears that for the majority of players SLG tends to increase over the course of their career, indicating their performance is worsening with age. 
 ```{r}
 slopes <-starters19 %>% 
     group_by(Player) %>% 
@@ -611,7 +616,7 @@ starters19 %>%
 starters19 <- starters19 %>%
   mutate(seasonTime = case_when(surgery1time == "after debut" & (Year - surgery1Year) <= 3 & (Year - surgery1Year) > 0 ~ "short after",
                                surgery1time == "after debut" & (Year - surgery1Year) > 3 ~ "long after",
-                               TRUE ~ "no surgery"))
+                               TRUE ~ "no surgery")) 
 ```
 
 For the 85 starters that underwent surgery, the average number of seasons prior the surgery was 5.15. This distribution of number of seasons before surgery can be seen in the density plot below. Of these 85 starters, 25 did not return to play again the MLB level following their surgery, and only 35 played "long after" their surgery. 33 players played in all three time periods. 
@@ -678,4 +683,245 @@ breakdown %>%
         axis.title.y = element_markdown(family="mono", size = 11))
 ```
 
+### Model Intro and Priors
 
+The goal with this model will be to predict a player's seasonal SLG as a function of their age and the `seasonTime` variable. Again, this variable will remain "no surgery" for all seasons for players that never had Tommy John surgery. This model will use data described earlier that contains information on 481 starters, but filters out seasons with less than 15 IP due to the abnormal SLGs that only few innings pitched often give. Originally, I had thought of including IP as a predictor to account for these abnormal SLGs, but the goal of this analysis is to help scouts predict a pitcher's success *prior* to the season starts - thus, only including variables that are known prior to the season starting is necessary. 
+
+The following predictors will be used in this model: \
+- $X_1$: Pitcher age at season \
+- $X_2$: Pitcher age *squared* at season \
+- $X_3$: Indicator for if the season is happening "short after" surgery (reference level "no surgery") \
+- $X_4$: Indicator for if the season in happening "long after" surgery (reference level "no surgery") \
+
+The model built will take the form of a *hierarchical model with varying intercepts*, allowing the *intercept* (baseline SLG) to vary from pitcher to pitcher. I really contemplated a model with varying *slopes* in addition to intercepts, which would allow the rate at which SLG varies with age to change from pitcher to pitcher, but ultimately the runtime and complexity of this model swayed me to stick with just varying intercepts. 
+
+#### Layer 1
+
+The first layer of the hierarchical model describes the relationship between SLG and age/surgery status **within** each pitcher $j$ by: 
+\begin{equation}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} .
+\end{equation}
+
+This equation assumes that for each pitcher $j$, SLGs are normally distributed around an age- and surgery status-specific mean, $\beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij}$, with standard deviation $\sigma_y$. We assume the relationships between SLG and age and surgery status *randomly* vary from pitcher to pitcher, as players have different intercepts $\beta_{0j}$ but shared coefficients $(\beta_1, \beta_2, \beta_3, \beta_4)$. This model depends on 6 parameters: \
+
+- $\beta_{0j}$: intercept of the regression model for pitcher $j$ \
+  - This is the only pitcher-specific parameter; the rest of the parameters are **global** and shared across all pitchers \
+- $\beta_1$: the typical change in a pitcher’s SLG per one year increase in age, holding surgery status constant \
+- $\beta_2$: the typical change in a pitcher’s SLG per one unit increase in age squared, holding surgery status constant \
+- $\beta_3$: the typical difference in a pitcher's SLG for season short after Tommy John surgery in comparison to not having Tommy John surgery, holding age constant \
+- $\beta_4$: the typical difference in a pitcher's SLG for season long after Tommy John surgery in comparison to not having Tommy John surgery, holding age constant \
+- $\sigma_y$: **within-group variability** around the mean regression model $\beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij}$. This is a measure of the strength of the relationship between an individual pitcher’s SLG and their age and surgery status. 
+
+#### Layer 2
+
+The second layer of the hierarchical model represents how the relationships between SLG and age/surgery status vary from pitcher to pitcher, or **between pitchers**. Thus, we will model the variability in the pitcher-specific intercept $\beta_{0j}$. 
+
+We assume that the pitcher-specific intercept parameters (baseline SLGS) vary normally around mean $\beta_0$ with standard deviation $\sigma_0$. 
+
+\begin{equation}
+\beta_{0j} | \beta_0, \sigma_0 \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  .
+\end{equation}
+
+In this equation, parameter $\beta_0$ represents the global average SLG intercept across all pitchers (the average pitcher's baseline SLG). The parameter $\sigma_0$ represents **between-group variability** in intercepts $\beta_{0j}$ (the extent to which baseline SLGs vary from pitcher to pitcher). 
+
+#### Completing the model
+
+Finally, we specify the priors for global parameters $\beta_0$, $\beta_1$, $\sigma_y$, and $\sigma_0$. We put a prior of $N(0.439, 0.069)$ on the centered intercept as we are pretty certain typical pitcher has a SLG against of about 0.439. We are unsure of the true relationship between age and SLG as well as surgery status and SLG, so put weakly informative priors on these parameters. The final model is shown below: 
+
+```{r, results = "hide"}
+#get numbers for prior on intercept
+starters19 %>% 
+  ungroup() %>%
+  filter(IP > 15) %>%
+  summarize(mean(SLG), sd(SLG))
+```
+
+\begin{equation}
+\begin{split}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} \\
+\beta_{0j} | \beta_0, \sigma_0 \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  \\
+\beta_{0c}  & \sim N(0.44, 0.069) \\
+\beta_1  & \sim N(0, 0.0439^2) \\
+\beta_2  & \sim N(0, 0.00077^2) \\
+\beta_3  & \sim N(0, 0.8954^2) \\
+\beta_4  & \sim N(0, 0.87907^2) \\
+\sigma_y & \sim \text{Exp}(0.072) \\
+\sigma_0 & \sim \text{Exp}(1). \\
+\end{split}
+\end{equation}
+
+```{r}
+#get data ready - this model does not use all players as 
+slgData <- starters19 %>%
+  ungroup() %>%
+  filter(IP > 15)  %>%
+  mutate(age2 = Age^2, 
+         seasonTime = case_when(surgery1time == "after debut" & (Year - surgery1Year) <= 3 & (Year - surgery1Year) > 0 ~ 1,
+                               surgery1time == "after debut" & (Year - surgery1Year) > 3 ~ 2,
+                               TRUE ~ 0), 
+         seasonTime = as.factor(seasonTime), 
+         seasonTime = relevel(seasonTime, ref='0')) 
+```
+
+```{r, eval=FALSE}
+slgMod<- stan_glmer(
+  SLG ~ Age + age2 + seasonTime + (1 | Player),
+  data = slgData, family = gaussian,
+  prior_intercept = normal(0.44, 0.069),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  prior_covariance = decov(reg = 1, conc = 1, shape = 1, scale = 1),
+  chains = 4, iter = 5000*2, seed = 84735, adapt_delta = 0.99999
+)
+#write_rds(slgMod, "data/slgMod.rds")
+```
+
+```{r, results = "hide"}
+slgMod <- read_rds("data/slgMod.rds")
+
+# Check the prior specifications
+prior_summary(slgMod)$prior_intercept
+prior_summary(slgMod)$prior
+```
+
+### Checking the diagnostics 
+
+Just like with the logistic regression model, we must check the diagnostics of the simulation.
+
+```{r, results = "hide"}
+neff_ratio(slgMod)
+rhat(slgMod)
+```
+
+### Posterior results
+
+#### The global relationship
+
+The global relationship between age, surgery status, and SLG for the typical pitcher is represented by $\beta_{0} + \beta_1 X + \beta_2 X + \beta_3 X + \beta_4$. We can check out the posterior summaries for $\beta_0 \dots \beta_4$ below, which are **fixed** across pitchers. 
+```{r}
+tidyMod <- tidy(slgMod, effects = "fixed",
+                       conf.int = TRUE, conf.level = 0.80) 
+tidyMod %>%
+  mutate(estimate = round(estimate, 6), 
+         std.error = round(std.error, 4), 
+         conf.low = round(conf.low, 6), 
+         conf.high = round(conf.high, 6)) %>%
+  gt() %>%
+  tab_header(
+    title = md("**Model results**")
+  ) 
+```
+
+With this summary, we see that the 80% credible interval on the `Age` coefficient includes 0. In other words, we do not have evidence that the typical pitcher tends get worse with age. Both `seasonTime` coefficients are significant. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better *short after* their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better *long after* their surgery in comparison to no surgery. As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing "short after" his surgery to "long after" it. 
+
+```{r}
+mcmc_areas(slgMod, pars = vars(starts_with("season")), prob = 0.8) + 
+  geom_vline(xintercept = 0)+
+  scale_y_discrete(labels = c("short after surgery", "long after surgery"))
+```
+
+Despite these variables being statistically significant, they are not practically significant. There is so much randomness in baseball - it is a major reason why teams play 162 games in a season and why even the worse teams typically win 60+ games. As a result, pitcher SLG is going to vary quite a bit from season to season. This can be seen in the graph below, which plots pitcher SLG across time for four players each with 17 seasons with 15+ IP. Even in a pitcher's seasons pretty close in age, there is quite a bit of noise in SLG, providing evidence that the "significant decrease" of about 0.014 short after surgery and 0.017 long after surgery is really not that meaningful. 
+
+```{r}
+slgData %>%
+  group_by(Player) %>%
+  mutate(nseasons = n()) %>%
+  filter(nseasons == 17) %>%
+  ggplot(aes(x=Age, y=SLG, color = Player))+
+  geom_point()+
+  scale_color_manual(values = c("navy", "red", "darkgreen", "goldenrod"))+
+  labs(title = "Variation in SLG from season to season is high")+
+  theme_classic()+
+  theme(plot.title.position = "plot", 
+        plot.title = element_markdown(family = "mono", size = 12), 
+        axis.title.x = element_markdown(family="mono", size = 11), 
+        axis.title.y = element_markdown(family="mono", size = 11), 
+        legend.title = element_markdown(family="mono", size = 11), 
+        legend.text = element_markdown(family="mono", size = 11))
+```
+
+### Group specific relationships 
+
+With this model, we can compare posterior results between pitchers. For example, we will look at the posterior results of 2019 Hall of Fame inductee [Ryan Dempster](https://www.baseball-reference.com/players/d/dempsry01.shtml) and former starter [Jason Hammel](https://www.baseball-reference.com/players/h/hammeja01.shtml). The summary below compares the typical SLGs of these pitchers to the average pitcher, $b_{0j} = \beta_{0j} - \beta_0$. When controlling for age and surgery status, Dempster's seasonal SLG tends to be significantly lower (better) than the average pitchers’s, whereas Hammel’s tends to lean slightly better than average but not significantly. For example, there’s an 80% posterior chance that Dempster’s typical seasonal SLG is between 0.057 and 0.02 points better than average. This is not surprising given that Dempster was admitted to the Hall of Fame!
+```{r}
+tidy(slgMod, effects = "ran_vals",
+     conf.int = TRUE, conf.level = 0.80) %>% 
+  filter(level %in% c("Ryan_Dempster", "Jason_Hammel")) %>% 
+  select(level, estimate, conf.low, conf.high) %>%
+  rename(Player = level) %>%
+  gt() %>%
+  tab_header(
+    title = md("**Posterior results for Dempster and Hammel**")
+  )
+```
+
+If Dempster and Hammel were to come back and play in the 2022 season, we could predict their *next* season's SLG using their age and surgery status. More importantly, we can predict SLG for pitchers that are currently active and that we do not have prior MLB seasonal statistics on. For example, we can try to predict the 2022 seasonal SLG for MLB 2021 first round draft pick [Jack Leiter](https://www.baseball-reference.com/register/player.fcgi?id=leiter000jac). Given that we don't have any information on prior seasonal SLGs, his posterior predicted interval is much wider. In a future model, a variable that we could add would be draft round, which might help explain more of the baseline variation in SLG.
+
+```{r}
+# Simulate posterior predictive models for the 3 pitchers
+set.seed(84735)
+predict_next_season <- posterior_predict(
+  slgMod,
+  newdata = data.frame(
+    Player = c("Ryan Dempster", "Jason Hammel", "Jack Leiter"), 
+    Age = c(44, 39, 21), age2 = c(1936,1521,21), seasonTime = c("2", "0", "0")))
+
+# Posterior predictive model plots
+mcmc_areas(predict_next_season, prob = 0.8) +
+ ggplot2::scale_y_discrete(
+   labels = c("Ryan Dempster", "Jason Hammel", "Jack Leiter"))
+```
+
+#### Within- and between- group variability 
+
+Knowing that there is variability in SLG, we want to understand where it is coming from. Is it coming from season to season **within** each pitcher $(\sigma_y)$, or is it coming from differences **between** pitchers $(\sigma_0)$?
+
+Posterior summaries for these variance parameters suggest that more of the variance is coming from **between** pitchers than **within** pitchers. For a given pitcher $j$, we estimate that their observed SLG at any age and surgery status will deviate from **their** mean regression model by roughly 0.06 in SLG $(\sigma_y)$. As seen in the variation of SLG scatterplot from earlier, a deviation of 0.06 is neither large nor small, suggesting a mediocre relationship between SLG, age, and surgery status within pitchers. In contrast, we expect that baseline SLGs vary by roughly 0.038 points from pitcher to pitcher $(\sigma_0)$.  
+
+```{r, results = "hide"}
+tidy_sigma <- tidy(slgMod, effects = "ran_pars")
+tidy_sigma
+```
+
+Proportionally, we understand that differences between pitchers account for roughly 28.3% of the total variability in SLG, with fluctuations among seasons within pitchers explaining the majority of variation (71.66%). 
+```{r, results = "hide"}
+sigma_0 <- tidy_sigma[1,3]
+sigma_y <- tidy_sigma[2,3]
+sigma_0^2 / (sigma_0^2 + sigma_y^2)
+sigma_y^2 / (sigma_0^2 + sigma_y^2)
+```
+
+### Model evaluation
+
+Just as with our logistic regression model, to evaluate this model we will ask three questions. 
+
+**First, how fair is the model?** \
+The answer to this question is pretty much the same as with the other model - this model uses what some may consider private information, but these players understand that this information being made public is part of what comes with being an MLB player. Thus, while we cannot ask all players whether they are okay with their information being used in this model, we will assume it okay.
+
+**Second, how wrong is the model?**
+The posterior predictive check below shows that our model produces posterior simulated datasets of seasonal SLG that are fairly consistent with the main features in the original data the model was run with. This is good news, and allows us to move forward to question 3. 
+```{r}
+pp_check(slgMod)+
+   xlab("SLG")
+```
+
+**Finally, what’s the predictive accuracy of this model?**\
+
+We answer this question by seeing how well our model did predicting the seasonal SLGs for the pitchers that were part of our data. The observed seasonal SLGs tend to be 0.033 points, or 0.539 standard deviations, from their posterior mean predictions. Knowing the randomness and high variability of SLG, this amount of error does not seem unreasonable. The model also has a good proportion of observed SLGs (60.3%) that fall within their respective 50% posterior predictive interval.  
+```{r, results = "hide"}
+set.seed(84735)
+prediction_summary(model = slgMod, data = slgData)
+```
+
+Unfortunately, I was unable to obtain cross-validated metrics of posterior predictive accuracy due to the model's complexity and large amount of data. These metrics would help us understand how well our model predicts the seasonal SLGs of players that weren’t included in our sample data. Despite this unfortunate circumstance, the not cross-validated model results proved to be encouraging. 
+
+## Future Steps and Conclusions 
+
+Throughout this analysis, we have covered a lot. Going back to the results of the original logistic regression model, we understand that the more innings a player pitches and the higher a strikeout rate they have, the more likely they are to pitch again at the MLB level following their surgery (holding all variables constant). We also learned players are less and less likely to play again at the MLB level as they have surgery at older ages (holding all other variables constant), which is not necessarily unexpected. In the future, we could brainstorm additional variables that may increase the predictive power of this model. It could also be interesting to run this model with all pitchers (instead of just those that have had Tommy John surgery) and investigate the relationship between returning to pitch the following season and pitcher age, taking into account past performance metrics and surgery status. 
+
+Thinking about the second model, we were unable to find a statistically significant relationship between age and pitcher performance, and relationship between surgery status and SLG appeared practically insignificant. The nice thing about this model is that it allows us to predict seasonal SLGs with reasonable error. However, in the future a few modifications could be made to improve this model: \
+- Include draft round as a predictor variable \
+- Run the model with varying slopes, allowing the relationship between pitcher age and SLG as well as pitcher surgery status and SLG to vary from pitcher to pitcher \
+- Use all players (including those that had Tommy John surgery before reaching the majors) and data from currently active players so that we can predict performance for active players in their upcoming 2022 or 2023 season \
+
+There is still **so much** to be learned about the complex relationship between Tommy John surgery, aging, and pitcher performance. While there are flaws in this analysis (like most analyses), it is a step in the right direction to understanding this complicated relationship. And in the Bayesian spirit, I plan continue to update my knowledge about the Tommy John surgery, aging, and pitcher performance using additional data, modeling techniques, and baseball IQ in the future. 

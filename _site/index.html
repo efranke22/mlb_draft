@@ -404,8 +404,8 @@ seasonal_complete %&gt;%
 <h2>Data</h2>
 <p>This analysis uses data from all players drafted since 1987, the first year that the Secondary January Amateur draft did not exist. Data for this analysis were collected from multiple sources. Information on each player’s draft round and year were collected from a GitHub source and checked for accuracy. Unfortunately, I can no longer find the webpage where I originally downloaded this data from. I then joined these data by player name and birth date with <a href="https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching">career level pitcher statistics and debut information from Baseball Reference</a>, which had to be downloaded individually for each season. Tommy John surgery information was obtained from <a href="https://mlbreports.com/tj-surgery/">MLB Reports</a>, and finally individual player data on the seasonal level were downloaded from <a href="https://stathead.com/baseball/season_finder.cgi?request=1&amp;match=single&amp;order_by=SO&amp;qualifiers=nomin&amp;minIpVal=162&amp;minDecVal=14&amp;mingamesVal=40&amp;year_min=1987&amp;year_max=2021&amp;lgs%5B%5D=AL&amp;lgs%5B%5D=NL&amp;type=p&amp;age_min=0&amp;age_max=99&amp;season_start=1&amp;season_end=-1&amp;games_started=60&amp;games_relieved=80&amp;location=pob&amp;locationMatch=is&amp;isHOF=either">Stathead Baseball</a>. The diversity of the downloaded data allowed me to create a database with a wide variety of variables, and enables the comparison between players as well as the analysis of a player’s development over the course of their career.</p>
 <p>The main variables I will use in this analysis are displayed in the codebook below. They come from my final data set, which is called <code>seasonal_complete</code>. My process to create this data set is fully documented in the data cleaning section of this website.</p>
-<pre class="r"><code>codebook = data.frame(Variable = c(&quot;Player&quot;, &quot;Year&quot;, &quot;Age&quot;, &quot;hs_draftee&quot;, &quot;birth_date&quot;, &quot;Debut&quot;, &quot;round&quot;, &quot;surgery1Year&quot;, &quot;statsTime&quot;, &quot;surgery1time&quot;, &quot;surgery_age&quot;, &quot;ERA+&quot;, &quot;G&quot;, &quot;GS&quot;, &quot;IP&quot;, &quot;WHIP&quot;, &quot;kRate&quot;), 
-                      Meaning = c(&quot;name of pitcher&quot;, &quot;year of MLB season&quot;, &quot;player age during season&quot;, &quot;whether the player was drafted in high school&quot;, &quot;player date of birth&quot;, &quot;player MLB debut data&quot;, &quot;the player&#39;s draft round&quot;, &quot;the year the player had their first Tommy John surgery while in the MLB&quot;, &quot;whether the stats for this season come before or after the player&#39;s first surgery&quot;, &quot;whether the player&#39;s first surgery came before draft, between draft &amp; debut, or after debut&quot;, &quot;age of pitcher at first surgery&quot;, &quot;adjusts a pitcher&#39;s ERA according to the pitcher&#39;s ballpark and the ERA of the pitcher&#39;s league&quot;, &quot;games played&quot;, &quot;games started&quot;, &quot;innings pitched&quot;, &quot;number of walks + hits per inning pitched&quot;, &quot;average number of strikeouts per inning&quot;))
+<pre class="r"><code>codebook = data.frame(Variable = c(&quot;Player&quot;, &quot;Year&quot;, &quot;Age&quot;, &quot;hs_draftee&quot;, &quot;birth_date&quot;, &quot;Debut&quot;, &quot;seasonTime&quot;, &quot;surgery1Year&quot;, &quot;statsTime&quot;, &quot;surgery1time&quot;, &quot;surgery_age&quot;, &quot;ERA+&quot;, &quot;G&quot;, &quot;GS&quot;, &quot;IP&quot;, &quot;WHIP&quot;, &quot;kRate&quot;, &quot;SLG&quot;), 
+                      Meaning = c(&quot;name of pitcher&quot;, &quot;year of MLB season&quot;, &quot;player age during season&quot;, &quot;whether the player was drafted in high school&quot;, &quot;player date of birth&quot;, &quot;player MLB debut data&quot;, &quot;the season&#39;s stats occured without surgery, short after surgery, or long after surgery&quot;, &quot;the year the player had their first Tommy John surgery while in the MLB&quot;, &quot;whether the stats for this season come before or after the player&#39;s first surgery&quot;, &quot;whether the player&#39;s first surgery came before draft, between draft &amp; debut, or after debut&quot;, &quot;age of pitcher at first surgery&quot;, &quot;adjusts a pitcher&#39;s ERA according to the pitcher&#39;s ballpark and the ERA of the pitcher&#39;s league&quot;, &quot;games played&quot;, &quot;games started&quot;, &quot;innings pitched&quot;, &quot;number of walks + hits per inning pitched&quot;, &quot;average number of strikeouts per inning&quot;, &quot;total number of bases a pitcher gives up per at bat&quot;))
 codebook %&gt;%
   gt() %&gt;%
   tab_header(
@@ -414,20 +414,20 @@ codebook %&gt;%
   tab_style(
     style = cell_fill(color = &quot;honeydew&quot;),
     locations = cells_body(
-      rows = Variable %in% c(&quot;Player&quot;, &quot;Age&quot;, &quot;birth_date&quot;, &quot;round&quot;, &quot;statsTime&quot;, &quot;surgery_age&quot;, &quot;G&quot;, &quot;IP&quot;, &quot;kRate&quot;))) %&gt;%
+      rows = Variable %in% c(&quot;Player&quot;, &quot;Age&quot;, &quot;birth_date&quot;, &quot;seasonTime&quot;, &quot;statsTime&quot;, &quot;surgery_age&quot;, &quot;G&quot;, &quot;IP&quot;, &quot;kRate&quot;))) %&gt;%
   tab_style(
     style = cell_fill(color = &quot;lightcyan3&quot;),
     locations = cells_body(
-      rows = Variable %!in% c(&quot;Player&quot;, &quot;Age&quot;, &quot;birth_date&quot;, &quot;round&quot;, &quot;statsTime&quot;, &quot;surgery_age&quot;, &quot;G&quot;, &quot;IP&quot;, &quot;kRate&quot;))) %&gt;%
+      rows = Variable %!in% c(&quot;Player&quot;, &quot;Age&quot;, &quot;birth_date&quot;, &quot;seasonTime&quot;, &quot;statsTime&quot;, &quot;surgery_age&quot;, &quot;G&quot;, &quot;IP&quot;, &quot;kRate&quot;))) %&gt;%
   tab_options(
     table.font.size = px(13L)
   )</code></pre>
-<div id="febogxevss" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="qkckxwehyn" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#febogxevss .gt_table {
+#qkckxwehyn .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -452,7 +452,7 @@ codebook %&gt;%
   border-left-color: #D3D3D3;
 }
 
-#febogxevss .gt_heading {
+#qkckxwehyn .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -464,7 +464,7 @@ codebook %&gt;%
   border-right-color: #D3D3D3;
 }
 
-#febogxevss .gt_title {
+#qkckxwehyn .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -474,7 +474,7 @@ codebook %&gt;%
   border-bottom-width: 0;
 }
 
-#febogxevss .gt_subtitle {
+#qkckxwehyn .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -484,13 +484,13 @@ codebook %&gt;%
   border-top-width: 0;
 }
 
-#febogxevss .gt_bottom_border {
+#qkckxwehyn .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#febogxevss .gt_col_headings {
+#qkckxwehyn .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -505,7 +505,7 @@ codebook %&gt;%
   border-right-color: #D3D3D3;
 }
 
-#febogxevss .gt_col_heading {
+#qkckxwehyn .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -525,7 +525,7 @@ codebook %&gt;%
   overflow-x: hidden;
 }
 
-#febogxevss .gt_column_spanner_outer {
+#qkckxwehyn .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -537,15 +537,15 @@ codebook %&gt;%
   padding-right: 4px;
 }
 
-#febogxevss .gt_column_spanner_outer:first-child {
+#qkckxwehyn .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#febogxevss .gt_column_spanner_outer:last-child {
+#qkckxwehyn .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#febogxevss .gt_column_spanner {
+#qkckxwehyn .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -557,7 +557,7 @@ codebook %&gt;%
   width: 100%;
 }
 
-#febogxevss .gt_group_heading {
+#qkckxwehyn .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -579,7 +579,7 @@ codebook %&gt;%
   vertical-align: middle;
 }
 
-#febogxevss .gt_empty_group_heading {
+#qkckxwehyn .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -594,15 +594,15 @@ codebook %&gt;%
   vertical-align: middle;
 }
 
-#febogxevss .gt_from_md > :first-child {
+#qkckxwehyn .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#febogxevss .gt_from_md > :last-child {
+#qkckxwehyn .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#febogxevss .gt_row {
+#qkckxwehyn .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -621,7 +621,7 @@ codebook %&gt;%
   overflow-x: hidden;
 }
 
-#febogxevss .gt_stub {
+#qkckxwehyn .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -633,7 +633,7 @@ codebook %&gt;%
   padding-left: 12px;
 }
 
-#febogxevss .gt_summary_row {
+#qkckxwehyn .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -643,7 +643,7 @@ codebook %&gt;%
   padding-right: 5px;
 }
 
-#febogxevss .gt_first_summary_row {
+#qkckxwehyn .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -653,7 +653,7 @@ codebook %&gt;%
   border-top-color: #D3D3D3;
 }
 
-#febogxevss .gt_grand_summary_row {
+#qkckxwehyn .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -663,7 +663,7 @@ codebook %&gt;%
   padding-right: 5px;
 }
 
-#febogxevss .gt_first_grand_summary_row {
+#qkckxwehyn .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -673,11 +673,11 @@ codebook %&gt;%
   border-top-color: #D3D3D3;
 }
 
-#febogxevss .gt_striped {
+#qkckxwehyn .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#febogxevss .gt_table_body {
+#qkckxwehyn .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -686,7 +686,7 @@ codebook %&gt;%
   border-bottom-color: #D3D3D3;
 }
 
-#febogxevss .gt_footnotes {
+#qkckxwehyn .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -700,13 +700,13 @@ codebook %&gt;%
   border-right-color: #D3D3D3;
 }
 
-#febogxevss .gt_footnote {
+#qkckxwehyn .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#febogxevss .gt_sourcenotes {
+#qkckxwehyn .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -720,41 +720,41 @@ codebook %&gt;%
   border-right-color: #D3D3D3;
 }
 
-#febogxevss .gt_sourcenote {
+#qkckxwehyn .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#febogxevss .gt_left {
+#qkckxwehyn .gt_left {
   text-align: left;
 }
 
-#febogxevss .gt_center {
+#qkckxwehyn .gt_center {
   text-align: center;
 }
 
-#febogxevss .gt_right {
+#qkckxwehyn .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#febogxevss .gt_font_normal {
+#qkckxwehyn .gt_font_normal {
   font-weight: normal;
 }
 
-#febogxevss .gt_font_bold {
+#qkckxwehyn .gt_font_bold {
   font-weight: bold;
 }
 
-#febogxevss .gt_font_italic {
+#qkckxwehyn .gt_font_italic {
   font-style: italic;
 }
 
-#febogxevss .gt_super {
+#qkckxwehyn .gt_super {
   font-size: 65%;
 }
 
-#febogxevss .gt_footnote_marks {
+#qkckxwehyn .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 65%;
@@ -786,8 +786,8 @@ codebook %&gt;%
 <td class="gt_row gt_left" style="background-color: #F0FFF0;">player date of birth</td></tr>
     <tr><td class="gt_row gt_left" style="background-color: #B4CDCD;">Debut</td>
 <td class="gt_row gt_left" style="background-color: #B4CDCD;">player MLB debut data</td></tr>
-    <tr><td class="gt_row gt_left" style="background-color: #F0FFF0;">round</td>
-<td class="gt_row gt_left" style="background-color: #F0FFF0;">the player's draft round</td></tr>
+    <tr><td class="gt_row gt_left" style="background-color: #F0FFF0;">seasonTime</td>
+<td class="gt_row gt_left" style="background-color: #F0FFF0;">the season's stats occured without surgery, short after surgery, or long after surgery</td></tr>
     <tr><td class="gt_row gt_left" style="background-color: #B4CDCD;">surgery1Year</td>
 <td class="gt_row gt_left" style="background-color: #B4CDCD;">the year the player had their first Tommy John surgery while in the MLB</td></tr>
     <tr><td class="gt_row gt_left" style="background-color: #F0FFF0;">statsTime</td>
@@ -808,6 +808,8 @@ codebook %&gt;%
 <td class="gt_row gt_left" style="background-color: #B4CDCD;">number of walks + hits per inning pitched</td></tr>
     <tr><td class="gt_row gt_left" style="background-color: #F0FFF0;">kRate</td>
 <td class="gt_row gt_left" style="background-color: #F0FFF0;">average number of strikeouts per inning</td></tr>
+    <tr><td class="gt_row gt_left" style="background-color: #B4CDCD;">SLG</td>
+<td class="gt_row gt_left" style="background-color: #B4CDCD;">total number of bases a pitcher gives up per at bat</td></tr>
   </tbody>
   
   
@@ -1120,12 +1122,12 @@ mcmc_dens_overlay(played_after_mod)+
   tab_header(
     title = md(&quot;**Model results**&quot;)
   ) </code></pre>
-<div id="lplhebximz" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="zknuxwpbjf" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#lplhebximz .gt_table {
+#zknuxwpbjf .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -1150,7 +1152,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-left-color: #D3D3D3;
 }
 
-#lplhebximz .gt_heading {
+#zknuxwpbjf .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1162,7 +1164,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-right-color: #D3D3D3;
 }
 
-#lplhebximz .gt_title {
+#zknuxwpbjf .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1172,7 +1174,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-bottom-width: 0;
 }
 
-#lplhebximz .gt_subtitle {
+#zknuxwpbjf .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1182,13 +1184,13 @@ mcmc_dens_overlay(played_after_mod)+
   border-top-width: 0;
 }
 
-#lplhebximz .gt_bottom_border {
+#zknuxwpbjf .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#lplhebximz .gt_col_headings {
+#zknuxwpbjf .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1203,7 +1205,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-right-color: #D3D3D3;
 }
 
-#lplhebximz .gt_col_heading {
+#zknuxwpbjf .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1223,7 +1225,7 @@ mcmc_dens_overlay(played_after_mod)+
   overflow-x: hidden;
 }
 
-#lplhebximz .gt_column_spanner_outer {
+#zknuxwpbjf .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1235,15 +1237,15 @@ mcmc_dens_overlay(played_after_mod)+
   padding-right: 4px;
 }
 
-#lplhebximz .gt_column_spanner_outer:first-child {
+#zknuxwpbjf .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#lplhebximz .gt_column_spanner_outer:last-child {
+#zknuxwpbjf .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#lplhebximz .gt_column_spanner {
+#zknuxwpbjf .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1255,7 +1257,7 @@ mcmc_dens_overlay(played_after_mod)+
   width: 100%;
 }
 
-#lplhebximz .gt_group_heading {
+#zknuxwpbjf .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1277,7 +1279,7 @@ mcmc_dens_overlay(played_after_mod)+
   vertical-align: middle;
 }
 
-#lplhebximz .gt_empty_group_heading {
+#zknuxwpbjf .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1292,15 +1294,15 @@ mcmc_dens_overlay(played_after_mod)+
   vertical-align: middle;
 }
 
-#lplhebximz .gt_from_md > :first-child {
+#zknuxwpbjf .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#lplhebximz .gt_from_md > :last-child {
+#zknuxwpbjf .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#lplhebximz .gt_row {
+#zknuxwpbjf .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1319,7 +1321,7 @@ mcmc_dens_overlay(played_after_mod)+
   overflow-x: hidden;
 }
 
-#lplhebximz .gt_stub {
+#zknuxwpbjf .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1331,7 +1333,7 @@ mcmc_dens_overlay(played_after_mod)+
   padding-left: 12px;
 }
 
-#lplhebximz .gt_summary_row {
+#zknuxwpbjf .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1341,7 +1343,7 @@ mcmc_dens_overlay(played_after_mod)+
   padding-right: 5px;
 }
 
-#lplhebximz .gt_first_summary_row {
+#zknuxwpbjf .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1351,7 +1353,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-top-color: #D3D3D3;
 }
 
-#lplhebximz .gt_grand_summary_row {
+#zknuxwpbjf .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1361,7 +1363,7 @@ mcmc_dens_overlay(played_after_mod)+
   padding-right: 5px;
 }
 
-#lplhebximz .gt_first_grand_summary_row {
+#zknuxwpbjf .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1371,11 +1373,11 @@ mcmc_dens_overlay(played_after_mod)+
   border-top-color: #D3D3D3;
 }
 
-#lplhebximz .gt_striped {
+#zknuxwpbjf .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#lplhebximz .gt_table_body {
+#zknuxwpbjf .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1384,7 +1386,7 @@ mcmc_dens_overlay(played_after_mod)+
   border-bottom-color: #D3D3D3;
 }
 
-#lplhebximz .gt_footnotes {
+#zknuxwpbjf .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1398,13 +1400,13 @@ mcmc_dens_overlay(played_after_mod)+
   border-right-color: #D3D3D3;
 }
 
-#lplhebximz .gt_footnote {
+#zknuxwpbjf .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#lplhebximz .gt_sourcenotes {
+#zknuxwpbjf .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1418,41 +1420,41 @@ mcmc_dens_overlay(played_after_mod)+
   border-right-color: #D3D3D3;
 }
 
-#lplhebximz .gt_sourcenote {
+#zknuxwpbjf .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#lplhebximz .gt_left {
+#zknuxwpbjf .gt_left {
   text-align: left;
 }
 
-#lplhebximz .gt_center {
+#zknuxwpbjf .gt_center {
   text-align: center;
 }
 
-#lplhebximz .gt_right {
+#zknuxwpbjf .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#lplhebximz .gt_font_normal {
+#zknuxwpbjf .gt_font_normal {
   font-weight: normal;
 }
 
-#lplhebximz .gt_font_bold {
+#zknuxwpbjf .gt_font_bold {
   font-weight: bold;
 }
 
-#lplhebximz .gt_font_italic {
+#zknuxwpbjf .gt_font_italic {
   font-style: italic;
 }
 
-#lplhebximz .gt_super {
+#zknuxwpbjf .gt_super {
   font-size: 65%;
 }
 
-#lplhebximz .gt_footnote_marks {
+#zknuxwpbjf .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 65%;
@@ -1565,7 +1567,8 @@ cv_accuracy$cv</code></pre>
 <div id="modeling-seasonal-success-and-trajectory" class="section level2">
 <h2>Modeling seasonal success and trajectory</h2>
 <p>Now that we have an understanding of what is correlated to a pitcher returning to pitch at the major league level following Tommy John surgery, we can attempt to look how seasonal success changes over a pitcher’s career. This analysis will include both players that never had Tommy John surgery as well as players that had their first surgery after their debut, and will overall only focus on starters due to the systematic differences in longevity between starters and relievers. To measure pitcher “success”, we will use WHIP. An ideal metric would be WAR (Wins Above Replacement) as it captures pitcher performance and is cumulative so accounts for starters that are able to pitch more innings. However, this metric did not come with the seasonal data downloaded from Baseball Reference. From the metrics we have, slugging percentage against is the next best thing. Slugging percentage against represents an average of the total number of bases a pitcher gives up per at bat. Thus, it shows how well a pitcher kept the opposing team of the basepaths as well as how well the pitcher limited their power.</p>
-<p>For this analysis, we have data on 2,674 players and their 12,691 seasons that occurred between 1987 and 2021. Of these 2,674 players, 754 are starters and together they played 4,491 seasons. We will narrow this number a bit more by filtering out potentially active players (anyone that has played in 2020 or 2021) to only analyze complete careers - doing this leaves us at 515 players and 3,143 seasons. While there was no indicator variable provided in the data for if someone is a starter, I created my own by calling a player a starter if they started at least 50% of the games they pitched in over their career. This may not accurately capture players who transitioned roles from starter to reliever or vice versa during their career, but given the quantity of players in this analysis it seemed like a simple and largely accurate way to distinguish players.</p>
+<p>For this analysis, we have data on 2,674 players and their 12,691 seasons that occurred between 1987 and 2021. Of these 2,674 players, 754 are starters and together they played 4,491 seasons. We will narrow this number a bit more by filtering out potentially active players (anyone that has played in 2020 or 2021) to only analyze complete careers, and will filter out anyone that had Tommy John surgery prior to reaching the MLB. Altogether, this leaves us with 481 players and 3,011 seasons.</p>
+<p>While there was no indicator variable provided in the data for if someone is a starter, I created my own by calling a player a starter if they started at least 50% of the games they pitched in over their career. This may not accurately capture players who transitioned roles from starter to reliever or vice versa during their career, but given the quantity of players in this analysis it seemed like a simple and largely accurate way to distinguish players.</p>
 <pre class="r"><code>seasonal_complete &lt;- seasonal_complete %&gt;%
   group_by(Player) %&gt;%
   mutate(totalGS = sum(GS), 
@@ -1597,18 +1600,20 @@ seasonal_complete_starters %&gt;%
   filter(starter_reliever == &quot;starter&quot;) %&gt;% 
   nrow()
 
-# remove active players and count number of seasons
+# remove active players and people that had TJ surgery before debut, count number of seasons
 seasonal_complete_starters %&gt;%
   group_by(Player) %&gt;%
   mutate(lastYear = max(Year)) %&gt;%
-  filter(lastYear &lt;= 2019) %&gt;% 
+  filter(lastYear &lt;= 2019, 
+         surgery1time == &quot;after debut&quot; | is.na(surgery1time)) %&gt;% 
   nrow()
 
-# number of non-active players
+# see number of players we have
 seasonal_complete_starters %&gt;%
   group_by(Player) %&gt;%
   mutate(lastYear = max(Year)) %&gt;%
-  filter(lastYear &lt;= 2019) %&gt;%
+  filter(lastYear &lt;= 2019, 
+         surgery1time == &quot;after debut&quot; | is.na(surgery1time)) %&gt;% 
   group_by(Player) %&gt;%
   count() %&gt;%
   nrow()
@@ -1617,7 +1622,8 @@ seasonal_complete_starters %&gt;%
 starters19 &lt;- seasonal_complete_starters %&gt;%
   group_by(Player) %&gt;%
   mutate(lastYear = max(Year)) %&gt;%
-  filter(lastYear &lt;= 2019)</code></pre>
+  filter(lastYear &lt;= 2019, 
+         surgery1time == &quot;after debut&quot; | is.na(surgery1time))</code></pre>
 <div id="exploratory-data-analysis-1" class="section level3">
 <h3>Exploratory Data Analysis</h3>
 <p>We will first start by looking at how slugging percent against (will be abbreviated SLG from now on) varies with age for starting pitchers. As seen in the plot below, there appears to be a very weak relationship between pitcher age and SLG, with SLG slightly increasing as pitcher age increases. However, this plot has a few issues. First, it pools all seasons together and ignores the data’s grouped structure: an individual pitcher’s SLG one season will be have some correlation to their SLG the following seasons. Second, there is some kind of selection bias happening with age. The few pitchers that are pitching in their late 30s and early 40s are likely doing so because they’ve had a very successful career!</p>
@@ -1633,7 +1639,7 @@ starters19 &lt;- seasonal_complete_starters %&gt;%
         axis.title.x = element_markdown(family=&quot;mono&quot;, size = 11), 
         axis.title.y = element_markdown(family=&quot;mono&quot;, size = 11))</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
-<p>To minimize these issues, we will look at the data in its grouped format using hierarchical modeling. We can start by taking a sample of 80 starters and plotting the smoothed linear trend in their SLG over the course of their career. Looking at the plot, it appears that for the majority of players SLG tends to increase over the course of their career, indicating their performance is worsening with age.</p>
+<p>To minimize these issues, we will look at the data in its grouped format. We can start by taking a sample of 80 starters and plotting the smoothed linear trend in their SLG over the course of their career. Looking at the plot, it appears that for the majority of players SLG tends to increase over the course of their career, indicating their performance is worsening with age.</p>
 <pre class="r"><code>slopes &lt;-starters19 %&gt;% 
     group_by(Player) %&gt;% 
     do({
@@ -1677,7 +1683,7 @@ starters19 %&gt;%
 starters19 &lt;- starters19 %&gt;%
   mutate(seasonTime = case_when(surgery1time == &quot;after debut&quot; &amp; (Year - surgery1Year) &lt;= 3 &amp; (Year - surgery1Year) &gt; 0 ~ &quot;short after&quot;,
                                surgery1time == &quot;after debut&quot; &amp; (Year - surgery1Year) &gt; 3 ~ &quot;long after&quot;,
-                               TRUE ~ &quot;no surgery&quot;))</code></pre>
+                               TRUE ~ &quot;no surgery&quot;)) </code></pre>
 <p>For the 85 starters that underwent surgery, the average number of seasons prior the surgery was 5.15. This distribution of number of seasons before surgery can be seen in the density plot below. Of these 85 starters, 25 did not return to play again the MLB level following their surgery, and only 35 played “long after” their surgery. 33 players played in all three time periods.</p>
 <pre class="r"><code>breakdown &lt;- starters19 %&gt;%
   filter(surgery1time == &quot;after debut&quot;) %&gt;%
@@ -1734,6 +1740,961 @@ breakdown %&gt;%
         axis.title.y = element_markdown(family=&quot;mono&quot;, size = 11))</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 </div>
+<div id="model-intro-and-priors" class="section level3">
+<h3>Model Intro and Priors</h3>
+<p>The goal with this model will be to predict a player’s seasonal SLG as a function of their age and the <code>seasonTime</code> variable. Again, this variable will remain “no surgery” for all seasons for players that never had Tommy John surgery. This model will use data described earlier that contains information on 481 starters, but filters out seasons with less than 15 IP due to the abnormal SLGs that only few innings pitched often give. Originally, I had thought of including IP as a predictor to account for these abnormal SLGs, but the goal of this analysis is to help scouts predict a pitcher’s success <em>prior</em> to the season starts - thus, only including variables that are known prior to the season starting is necessary.</p>
+<p>The following predictors will be used in this model:<br />
+- <span class="math inline">\(X_1\)</span>: Pitcher age at season<br />
+- <span class="math inline">\(X_2\)</span>: Pitcher age <em>squared</em> at season<br />
+- <span class="math inline">\(X_3\)</span>: Indicator for if the season is happening “short after” surgery (reference level “no surgery”)<br />
+- <span class="math inline">\(X_4\)</span>: Indicator for if the season in happening “long after” surgery (reference level “no surgery”)<br />
+</p>
+<p>The model built will take the form of a <em>hierarchical model with varying intercepts</em>, allowing the <em>intercept</em> (baseline SLG) to vary from pitcher to pitcher. I really contemplated a model with varying <em>slopes</em> in addition to intercepts, which would allow the rate at which SLG varies with age to change from pitcher to pitcher, but ultimately the runtime and complexity of this model swayed me to stick with just varying intercepts.</p>
+<div id="layer-1" class="section level4">
+<h4>Layer 1</h4>
+<p>The first layer of the hierarchical model describes the relationship between SLG and age/surgery status <strong>within</strong> each pitcher <span class="math inline">\(j\)</span> by: <span class="math display">\[\begin{equation}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} .
+\end{equation}\]</span></p>
+<p>This equation assumes that for each pitcher <span class="math inline">\(j\)</span>, SLGs are normally distributed around an age- and surgery status-specific mean, <span class="math inline">\(\beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij}\)</span>, with standard deviation <span class="math inline">\(\sigma_y\)</span>. We assume the relationships between SLG and age and surgery status <em>randomly</em> vary from pitcher to pitcher, as players have different intercepts <span class="math inline">\(\beta_{0j}\)</span> but shared coefficients <span class="math inline">\((\beta_1, \beta_2, \beta_3, \beta_4)\)</span>. This model depends on 6 parameters:<br />
+</p>
+<ul>
+<li><span class="math inline">\(\beta_{0j}\)</span>: intercept of the regression model for pitcher <span class="math inline">\(j\)</span><br />
+
+<ul>
+<li>This is the only pitcher-specific parameter; the rest of the parameters are <strong>global</strong> and shared across all pitchers<br />
+</li>
+</ul></li>
+<li><span class="math inline">\(\beta_1\)</span>: the typical change in a pitcher’s SLG per one year increase in age, holding surgery status constant<br />
+</li>
+<li><span class="math inline">\(\beta_2\)</span>: the typical change in a pitcher’s SLG per one unit increase in age squared, holding surgery status constant<br />
+</li>
+<li><span class="math inline">\(\beta_3\)</span>: the typical difference in a pitcher’s SLG for season short after Tommy John surgery in comparison to not having Tommy John surgery, holding age constant<br />
+</li>
+<li><span class="math inline">\(\beta_4\)</span>: the typical difference in a pitcher’s SLG for season long after Tommy John surgery in comparison to not having Tommy John surgery, holding age constant<br />
+</li>
+<li><span class="math inline">\(\sigma_y\)</span>: <strong>within-group variability</strong> around the mean regression model <span class="math inline">\(\beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij}\)</span>. This is a measure of the strength of the relationship between an individual pitcher’s SLG and their age and surgery status.</li>
+</ul>
+</div>
+<div id="layer-2" class="section level4">
+<h4>Layer 2</h4>
+<p>The second layer of the hierarchical model represents how the relationships between SLG and age/surgery status vary from pitcher to pitcher, or <strong>between pitchers</strong>. Thus, we will model the variability in the pitcher-specific intercept <span class="math inline">\(\beta_{0j}\)</span>.</p>
+<p>We assume that the pitcher-specific intercept parameters (baseline SLGS) vary normally around mean <span class="math inline">\(\beta_0\)</span> with standard deviation <span class="math inline">\(\sigma_0\)</span>.</p>
+<p><span class="math display">\[\begin{equation}
+\beta_{0j} | \beta_0, \sigma_0 \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  .
+\end{equation}\]</span></p>
+<p>In this equation, parameter <span class="math inline">\(\beta_0\)</span> represents the global average SLG intercept across all pitchers (the average pitcher’s baseline SLG). The parameter <span class="math inline">\(\sigma_0\)</span> represents <strong>between-group variability</strong> in intercepts <span class="math inline">\(\beta_{0j}\)</span> (the extent to which baseline SLGs vary from pitcher to pitcher).</p>
+</div>
+<div id="completing-the-model" class="section level4">
+<h4>Completing the model</h4>
+<p>Finally, we specify the priors for global parameters <span class="math inline">\(\beta_0\)</span>, <span class="math inline">\(\beta_1\)</span>, <span class="math inline">\(\sigma_y\)</span>, and <span class="math inline">\(\sigma_0\)</span>. We put a prior of <span class="math inline">\(N(0.439, 0.069)\)</span> on the centered intercept as we are pretty certain typical pitcher has a SLG against of about 0.439. We are unsure of the true relationship between age and SLG as well as surgery status and SLG, so put weakly informative priors on these parameters. The final model is shown below:</p>
+<pre class="r"><code>#get numbers for prior on intercept
+starters19 %&gt;% 
+  ungroup() %&gt;%
+  filter(IP &gt; 15) %&gt;%
+  summarize(mean(SLG), sd(SLG))</code></pre>
+<p><span class="math display">\[\begin{equation}
+\begin{split}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} \\
+\beta_{0j} | \beta_0, \sigma_0 \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  \\
+\beta_{0c}  &amp; \sim N(0.44, 0.069) \\
+\beta_1  &amp; \sim N(0, 0.0439^2) \\
+\beta_2  &amp; \sim N(0, 0.00077^2) \\
+\beta_3  &amp; \sim N(0, 0.8954^2) \\
+\beta_4  &amp; \sim N(0, 0.87907^2) \\
+\sigma_y &amp; \sim \text{Exp}(0.072) \\
+\sigma_0 &amp; \sim \text{Exp}(1). \\
+\end{split}
+\end{equation}\]</span></p>
+<pre class="r"><code>#get data ready - this model does not use all players as 
+slgData &lt;- starters19 %&gt;%
+  ungroup() %&gt;%
+  filter(IP &gt; 15)  %&gt;%
+  mutate(age2 = Age^2, 
+         seasonTime = case_when(surgery1time == &quot;after debut&quot; &amp; (Year - surgery1Year) &lt;= 3 &amp; (Year - surgery1Year) &gt; 0 ~ 1,
+                               surgery1time == &quot;after debut&quot; &amp; (Year - surgery1Year) &gt; 3 ~ 2,
+                               TRUE ~ 0), 
+         seasonTime = as.factor(seasonTime), 
+         seasonTime = relevel(seasonTime, ref=&#39;0&#39;)) </code></pre>
+<pre class="r"><code>slgMod&lt;- stan_glmer(
+  SLG ~ Age + age2 + seasonTime + (1 | Player),
+  data = slgData, family = gaussian,
+  prior_intercept = normal(0.44, 0.069),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  prior_covariance = decov(reg = 1, conc = 1, shape = 1, scale = 1),
+  chains = 4, iter = 5000*2, seed = 84735, adapt_delta = 0.99999
+)
+#write_rds(slgMod, &quot;data/slgMod.rds&quot;)</code></pre>
+<pre class="r"><code>slgMod &lt;- read_rds(&quot;data/slgMod.rds&quot;)
+
+# Check the prior specifications
+prior_summary(slgMod)$prior_intercept
+prior_summary(slgMod)$prior</code></pre>
+</div>
+</div>
+<div id="checking-the-diagnostics" class="section level3">
+<h3>Checking the diagnostics</h3>
+<p>Just like with the logistic regression model, we must check the diagnostics of the simulation.</p>
+<pre class="r"><code>neff_ratio(slgMod)
+rhat(slgMod)</code></pre>
+</div>
+<div id="posterior-results" class="section level3">
+<h3>Posterior results</h3>
+<div id="the-global-relationship" class="section level4">
+<h4>The global relationship</h4>
+<p>The global relationship between age, surgery status, and SLG for the typical pitcher is represented by <span class="math inline">\(\beta_{0} + \beta_1 X + \beta_2 X + \beta_3 X + \beta_4\)</span>. We can check out the posterior summaries for <span class="math inline">\(\beta_0 \dots \beta_4\)</span> below, which are <strong>fixed</strong> across pitchers.</p>
+<pre class="r"><code>tidyMod &lt;- tidy(slgMod, effects = &quot;fixed&quot;,
+                       conf.int = TRUE, conf.level = 0.80) 
+tidyMod %&gt;%
+  mutate(estimate = round(estimate, 6), 
+         std.error = round(std.error, 4), 
+         conf.low = round(conf.low, 6), 
+         conf.high = round(conf.high, 6)) %&gt;%
+  gt() %&gt;%
+  tab_header(
+    title = md(&quot;**Model results**&quot;)
+  ) </code></pre>
+<div id="dgffjhcpix" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#dgffjhcpix .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#dgffjhcpix .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#dgffjhcpix .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#dgffjhcpix .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#dgffjhcpix .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#dgffjhcpix .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#dgffjhcpix .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#dgffjhcpix .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#dgffjhcpix .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#dgffjhcpix .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#dgffjhcpix .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#dgffjhcpix .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#dgffjhcpix .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#dgffjhcpix .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dgffjhcpix .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dgffjhcpix .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#dgffjhcpix .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#dgffjhcpix .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#dgffjhcpix .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#dgffjhcpix .gt_left {
+  text-align: left;
+}
+
+#dgffjhcpix .gt_center {
+  text-align: center;
+}
+
+#dgffjhcpix .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#dgffjhcpix .gt_font_normal {
+  font-weight: normal;
+}
+
+#dgffjhcpix .gt_font_bold {
+  font-weight: bold;
+}
+
+#dgffjhcpix .gt_font_italic {
+  font-style: italic;
+}
+
+#dgffjhcpix .gt_super {
+  font-size: 65%;
+}
+
+#dgffjhcpix .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="5" class="gt_heading gt_title gt_font_normal gt_bottom_border" style><strong>Model results</strong></th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">term</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">estimate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">std.error</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">conf.low</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">conf.high</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_left">(Intercept)</td>
+<td class="gt_row gt_right">0.453004</td>
+<td class="gt_row gt_right">0.0543</td>
+<td class="gt_row gt_right">0.383468</td>
+<td class="gt_row gt_right">0.521428</td></tr>
+    <tr><td class="gt_row gt_left">Age</td>
+<td class="gt_row gt_right">-0.003880</td>
+<td class="gt_row gt_right">0.0039</td>
+<td class="gt_row gt_right">-0.008746</td>
+<td class="gt_row gt_right">0.001057</td></tr>
+    <tr><td class="gt_row gt_left">age2</td>
+<td class="gt_row gt_right">0.000138</td>
+<td class="gt_row gt_right">0.0001</td>
+<td class="gt_row gt_right">0.000051</td>
+<td class="gt_row gt_right">0.000223</td></tr>
+    <tr><td class="gt_row gt_left">seasonTime1</td>
+<td class="gt_row gt_right">-0.013582</td>
+<td class="gt_row gt_right">0.0071</td>
+<td class="gt_row gt_right">-0.022768</td>
+<td class="gt_row gt_right">-0.004494</td></tr>
+    <tr><td class="gt_row gt_left">seasonTime2</td>
+<td class="gt_row gt_right">-0.016627</td>
+<td class="gt_row gt_right">0.0081</td>
+<td class="gt_row gt_right">-0.026996</td>
+<td class="gt_row gt_right">-0.006200</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p>With this summary, we see that the 80% credible interval on the <code>Age</code> coefficient includes 0. In other words, we do not have evidence that the typical pitcher tends get worse with age. Both <code>seasonTime</code> coefficients are significant. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better <em>short after</em> their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better <em>long after</em> their surgery in comparison to no surgery. As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing “short after” his surgery to “long after” it.</p>
+<pre class="r"><code>mcmc_areas(slgMod, pars = vars(starts_with(&quot;season&quot;)), prob = 0.8) + 
+  geom_vline(xintercept = 0)+
+  scale_y_discrete(labels = c(&quot;short after surgery&quot;, &quot;long after surgery&quot;))</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p>Despite these variables being statistically significant, they are not practically significant. There is so much randomness in baseball - it is a major reason why teams play 162 games in a season and why even the worse teams typically win 60+ games. As a result, pitcher SLG is going to vary quite a bit from season to season. This can be seen in the graph below, which plots pitcher SLG across time for four players each with 17 seasons with 15+ IP. Even in a pitcher’s seasons pretty close in age, there is quite a bit of noise in SLG, providing evidence that the “significant decrease” of about 0.014 short after surgery and 0.017 long after surgery is really not that meaningful.</p>
+<pre class="r"><code>slgData %&gt;%
+  group_by(Player) %&gt;%
+  mutate(nseasons = n()) %&gt;%
+  filter(nseasons == 17) %&gt;%
+  ggplot(aes(x=Age, y=SLG, color = Player))+
+  geom_point()+
+  scale_color_manual(values = c(&quot;navy&quot;, &quot;red&quot;, &quot;darkgreen&quot;, &quot;goldenrod&quot;))+
+  labs(title = &quot;Variation in SLG from season to season is high&quot;)+
+  theme_classic()+
+  theme(plot.title.position = &quot;plot&quot;, 
+        plot.title = element_markdown(family = &quot;mono&quot;, size = 12), 
+        axis.title.x = element_markdown(family=&quot;mono&quot;, size = 11), 
+        axis.title.y = element_markdown(family=&quot;mono&quot;, size = 11), 
+        legend.title = element_markdown(family=&quot;mono&quot;, size = 11), 
+        legend.text = element_markdown(family=&quot;mono&quot;, size = 11))</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+</div>
+</div>
+<div id="group-specific-relationships" class="section level3">
+<h3>Group specific relationships</h3>
+<p>With this model, we can compare posterior results between pitchers. For example, we will look at the posterior results of 2019 Hall of Fame inductee <a href="https://www.baseball-reference.com/players/d/dempsry01.shtml">Ryan Dempster</a> and former starter <a href="https://www.baseball-reference.com/players/h/hammeja01.shtml">Jason Hammel</a>. The summary below compares the typical SLGs of these pitchers to the average pitcher, <span class="math inline">\(b_{0j} = \beta_{0j} - \beta_0\)</span>. When controlling for age and surgery status, Dempster’s seasonal SLG tends to be significantly lower (better) than the average pitchers’s, whereas Hammel’s tends to lean slightly better than average but not significantly. For example, there’s an 80% posterior chance that Dempster’s typical seasonal SLG is between 0.057 and 0.02 points better than average. This is not surprising given that Dempster was admitted to the Hall of Fame!</p>
+<pre class="r"><code>tidy(slgMod, effects = &quot;ran_vals&quot;,
+     conf.int = TRUE, conf.level = 0.80) %&gt;% 
+  filter(level %in% c(&quot;Ryan_Dempster&quot;, &quot;Jason_Hammel&quot;)) %&gt;% 
+  select(level, estimate, conf.low, conf.high) %&gt;%
+  rename(Player = level) %&gt;%
+  gt() %&gt;%
+  tab_header(
+    title = md(&quot;**Posterior results for Dempster and Hammel**&quot;)
+  )</code></pre>
+<div id="xjaoxiwfcu" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#xjaoxiwfcu .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xjaoxiwfcu .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xjaoxiwfcu .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xjaoxiwfcu .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xjaoxiwfcu .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xjaoxiwfcu .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xjaoxiwfcu .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xjaoxiwfcu .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xjaoxiwfcu .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xjaoxiwfcu .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xjaoxiwfcu .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xjaoxiwfcu .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xjaoxiwfcu .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#xjaoxiwfcu .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xjaoxiwfcu .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xjaoxiwfcu .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xjaoxiwfcu .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xjaoxiwfcu .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xjaoxiwfcu .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#xjaoxiwfcu .gt_left {
+  text-align: left;
+}
+
+#xjaoxiwfcu .gt_center {
+  text-align: center;
+}
+
+#xjaoxiwfcu .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xjaoxiwfcu .gt_font_normal {
+  font-weight: normal;
+}
+
+#xjaoxiwfcu .gt_font_bold {
+  font-weight: bold;
+}
+
+#xjaoxiwfcu .gt_font_italic {
+  font-style: italic;
+}
+
+#xjaoxiwfcu .gt_super {
+  font-size: 65%;
+}
+
+#xjaoxiwfcu .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 65%;
+}
+</style>
+<table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style><strong>Posterior results for Dempster and Hammel</strong></th>
+    </tr>
+    
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Player</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">estimate</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">conf.low</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">conf.high</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td class="gt_row gt_left">Jason_Hammel</td>
+<td class="gt_row gt_right">-0.01177937</td>
+<td class="gt_row gt_right">-0.03181847</td>
+<td class="gt_row gt_right">0.007848302</td></tr>
+    <tr><td class="gt_row gt_left">Ryan_Dempster</td>
+<td class="gt_row gt_right">-0.03825081</td>
+<td class="gt_row gt_right">-0.05659470</td>
+<td class="gt_row gt_right">-0.019846683</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p>If Dempster and Hammel were to come back and play in the 2022 season, we could predict their <em>next</em> season’s SLG using their age and surgery status. More importantly, we can predict SLG for pitchers that are currently active and that we do not have prior MLB seasonal statistics on. For example, we can try to predict the 2022 seasonal SLG for MLB 2021 first round draft pick <a href="https://www.baseball-reference.com/register/player.fcgi?id=leiter000jac">Jack Leiter</a>. Given that we don’t have any information on prior seasonal SLGs, his posterior predicted interval is much wider. In a future model, a variable that we could add would be draft round, which might help explain more of the baseline variation in SLG.</p>
+<pre class="r"><code># Simulate posterior predictive models for the 3 pitchers
+set.seed(84735)
+predict_next_season &lt;- posterior_predict(
+  slgMod,
+  newdata = data.frame(
+    Player = c(&quot;Ryan Dempster&quot;, &quot;Jason Hammel&quot;, &quot;Jack Leiter&quot;), 
+    Age = c(44, 39, 21), age2 = c(1936,1521,21), seasonTime = c(&quot;2&quot;, &quot;0&quot;, &quot;0&quot;)))
+
+# Posterior predictive model plots
+mcmc_areas(predict_next_season, prob = 0.8) +
+ ggplot2::scale_y_discrete(
+   labels = c(&quot;Ryan Dempster&quot;, &quot;Jason Hammel&quot;, &quot;Jack Leiter&quot;))</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<div id="within--and-between--group-variability" class="section level4">
+<h4>Within- and between- group variability</h4>
+<p>Knowing that there is variability in SLG, we want to understand where it is coming from. Is it coming from season to season <strong>within</strong> each pitcher <span class="math inline">\((\sigma_y)\)</span>, or is it coming from differences <strong>between</strong> pitchers <span class="math inline">\((\sigma_0)\)</span>?</p>
+<p>Posterior summaries for these variance parameters suggest that more of the variance is coming from <strong>between</strong> pitchers than <strong>within</strong> pitchers. For a given pitcher <span class="math inline">\(j\)</span>, we estimate that their observed SLG at any age and surgery status will deviate from <strong>their</strong> mean regression model by roughly 0.06 in SLG <span class="math inline">\((\sigma_y)\)</span>. As seen in the variation of SLG scatterplot from earlier, a deviation of 0.06 is neither large nor small, suggesting a mediocre relationship between SLG, age, and surgery status within pitchers. In contrast, we expect that baseline SLGs vary by roughly 0.038 points from pitcher to pitcher <span class="math inline">\((\sigma_0)\)</span>.</p>
+<pre class="r"><code>tidy_sigma &lt;- tidy(slgMod, effects = &quot;ran_pars&quot;)
+tidy_sigma</code></pre>
+<p>Proportionally, we understand that differences between pitchers account for roughly 28.3% of the total variability in SLG, with fluctuations among seasons within pitchers explaining the majority of variation (71.66%).</p>
+<pre class="r"><code>sigma_0 &lt;- tidy_sigma[1,3]
+sigma_y &lt;- tidy_sigma[2,3]
+sigma_0^2 / (sigma_0^2 + sigma_y^2)
+sigma_y^2 / (sigma_0^2 + sigma_y^2)</code></pre>
+</div>
+</div>
+<div id="model-evaluation-1" class="section level3">
+<h3>Model evaluation</h3>
+<p>Just as with our logistic regression model, to evaluate this model we will ask three questions.</p>
+<p><strong>First, how fair is the model?</strong><br />
+The answer to this question is pretty much the same as with the other model - this model uses what some may consider private information, but these players understand that this information being made public is part of what comes with being an MLB player. Thus, while we cannot ask all players whether they are okay with their information being used in this model, we will assume it okay.</p>
+<p><strong>Second, how wrong is the model?</strong> The posterior predictive check below shows that our model produces posterior simulated datasets of seasonal SLG that are fairly consistent with the main features in the original data the model was run with. This is good news, and allows us to move forward to question 3.</p>
+<pre class="r"><code>pp_check(slgMod)+
+   xlab(&quot;SLG&quot;)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<p><strong>Finally, what’s the predictive accuracy of this model?</strong><br />
+</p>
+<p>We answer this question by seeing how well our model did predicting the seasonal SLGs for the pitchers that were part of our data. The observed seasonal SLGs tend to be 0.033 points, or 0.539 standard deviations, from their posterior mean predictions. Knowing the randomness and high variability of SLG, this amount of error does not seem unreasonable. The model also has a good proportion of observed SLGs (60.3%) that fall within their respective 50% posterior predictive interval.</p>
+<pre class="r"><code>set.seed(84735)
+prediction_summary(model = slgMod, data = slgData)</code></pre>
+<p>Unfortunately, I was unable to obtain cross-validated metrics of posterior predictive accuracy due to the model’s complexity and large amount of data. These metrics would help us understand how well our model predicts the seasonal SLGs of players that weren’t included in our sample data. Despite this unfortunate circumstance, the not cross-validated model results proved to be encouraging.</p>
+</div>
+</div>
+<div id="future-steps-and-conclusions" class="section level2">
+<h2>Future Steps and Conclusions</h2>
+<p>Throughout this analysis, we have covered a lot. Going back to the results of the original logistic regression model, we understand that the more innings a player pitches and the higher a strikeout rate they have, the more likely they are to pitch again at the MLB level following their surgery (holding all variables constant). We also learned players are less and less likely to play again at the MLB level as they have surgery at older ages (holding all other variables constant), which is not necessarily unexpected. In the future, we could brainstorm additional variables that may increase the predictive power of this model. It could also be interesting to run this model with all pitchers (instead of just those that have had Tommy John surgery) and investigate the relationship between returning to pitch the following season and pitcher age, taking into account past performance metrics and surgery status.</p>
+<p>Thinking about the second model, we were unable to find a statistically significant relationship between age and pitcher performance, and relationship between surgery status and SLG appeared practically insignificant. The nice thing about this model is that it allows us to predict seasonal SLGs with reasonable error. However, in the future a few modifications could be made to improve this model:<br />
+- Include draft round as a predictor variable<br />
+- Run the model with varying slopes, allowing the relationship between pitcher age and SLG as well as pitcher surgery status and SLG to vary from pitcher to pitcher<br />
+- Use all players (including those that had Tommy John surgery before reaching the majors) and data from currently active players so that we can predict performance for active players in their upcoming 2022 or 2023 season<br />
+</p>
+<p>There is still <strong>so much</strong> to be learned about the complex relationship between Tommy John surgery, aging, and pitcher performance. While there are flaws in this analysis (like most analyses), it is a step in the right direction to understanding this complicated relationship. And in the Bayesian spirit, I plan continue to update my knowledge about the Tommy John surgery, aging, and pitcher performance using additional data, modeling techniques, and baseball IQ in the future.</p>
 </div>
 
 
