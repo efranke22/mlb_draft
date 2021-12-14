@@ -421,7 +421,7 @@ mcmc_acf(played_after_mod)
 
 ### Model results 
 
-Now that our simulation has proven itself reliable, we can check out the coefficients of our model. Using an 80% confidence interval, we see that a pitcher's **total innings pitched**, **strikeout rate**, and **surgery age** are significant variables in predicting whether they will pitch again at the MLB level. On the other hand, the **high school draftee indicator** variable and **average WHIP** are not significant variables. Whether or not a player is a **starter or reliever** is borderline significant as the lowest end of the confidence interval is just slightly negative, indicating it is reasonable to assume that starters are more likely to return to play the MLB level holding all other variables constant. 
+Now that our simulation has proven itself reliable, we can check out the coefficients of our model. Using an 80% confidence interval, we see that a pitcher's **total innings pitched**, **strikeout rate**, and **surgery age** are significant variables in predicting whether they will pitch again at the MLB level (when controlling for the other predictors in the model). On the other hand, the **high school draftee indicator** variable and **average WHIP** are not significant variables. Whether or not a player is a **starter or reliever** is borderline significant as the lowest end of the confidence interval is just slightly negative, indicating it is reasonable to assume that starters are more likely to return to play the MLB level holding all other variables constant. 
 
 ```{r}
 tidy(played_after_mod, effects = "fixed", conf.int = TRUE, conf.level = 0.80) %>%
@@ -440,14 +440,15 @@ Looking at the significant coefficients, we understand that: \
 
 - For every additional 100 total innings a player has pitched prior to his surgery, there is an 80% posterior chance that the odds of him returning to the pitch at the MLB level following the surgery **increase by somewhere between 17.8% and 43%** holding all other variables constant: $(e^{0.001635*100}, e^{0.003577*100}) = (1.178, 1.43)$. \
 - For every additional strikeout per nine inning pitched a player has prior to his surgery, there's an 80% posterior chance the odds of him returning to pitch at the MLB level following the surgery **increase by somewhere between 7.7% and 28.6%** holding all other variables constant: $(e^{0.665150*\frac{1}{9}}, e^{2.260704*\frac{1}{9}}) = (1.077, 1.286)$. \
-- For every year older that a player gets when he has surgery, we estimate there is an 80% posterior chance that the odds of him returning to pitch at the MLB level are **multiplied by a factor of 75.68% to 88.84%** holding all other variables constant: $(e^{-0.278644}, e^{-0.118299}) = (0.7568, 0.8884)$. 
+- For every year older that a player gets when he has surgery, we estimate there is an 80% posterior chance that the odds of him returning to pitch at the MLB level are **decreased by a factor of 75.68% to 88.84%** holding all other variables constant: $(e^{-0.278644}, e^{-0.118299}) = (0.7568, 0.8884)$. 
 
 ### Using the model 
 
 With a model, we can now use it in context. For example, suppose we wanted to predict whether or not [Tyler Glasnow](https://www.baseball-reference.com/players/g/glasnty01.shtml) will return to play again at the MLB level following his Tommy John surgery that occurred on August 4, 2021. Glasnow is currently a starter for the Tampa Bay Rays. Up until his surgery, he has averaged a WHIP of 1.248, 1.255 strikeouts per inning, and has pitched 403 innings. He was drafted out of high school and had surgery at age 27.948. To predict whether Glasnow will return to the MLB, we can approximate the posterior predictive model for the binary outcomes of $Y$, whether the pitcher plays again, where 
 
 \begin{split}
-Y | \beta_0, \beta_1, \beta_2, \beta_3, \beta_4, \beta_5, \beta_6 \sim \text{Bern}(\pi) \;\; \text{ with } \;\; \log\left( \frac{\pi}{1-\pi}\right) = \beta_0 + \beta_1 * 1 + \beta_2 * 403 + \beta_3 * 1.248 + \beta_4 * 1 + \beta_5 * 1.255 + \beta_6 * 27.948
+Y | \beta_0, \beta_1, \beta_2, \beta_3, \beta_4, \beta_5, \beta_6 \sim \text{Bern}(\pi) \\
+\text{ with } \;\; \log\left( \frac{\pi}{1-\pi}\right) = \beta_0 + \beta_1 * 1 + \beta_2 * 403 + \beta_3 * 1.248 + \beta_4 * 1 + \beta_5 * 1.255 + \beta_6 * 27.948
 \end{split}
 
 We can simulate 20,000 posterior predictions of $Y$ and learn 91.085% of them call for Glasnow to return to the MLB, making it reasonable to predict he will return after recovering from his surgery. 
@@ -604,7 +605,7 @@ starters19 %>%
   scale_color_manual(values = c("red", "navy"))
 ```
 
-With some very basic information about SLG trajectory overtime, we will now look into the impact on SLG of undergoing Tommy John surgery at a point in a player's career. For the 515 players we are analyzing in this study, 85 of them underwent their first Tommy John surgery at some point after their debut. For these players, we will create an indicator variable **`seasonTime`** for each season they played. This indicator variable will take one of three values. \
+With some very basic information about SLG trajectory overtime, we will now look into the impact on SLG of undergoing Tommy John surgery at a point in a player's career. For the 515 players we are analyzing in this study, 85 of them underwent their first Tommy John surgery at some point after their debut. For these players, we will create an categorical variable **`seasonTime`** for each season they played. This variable will take one of three values. \
 - **"no surgery"**: any season taking place prior to their surgery \
 - **"short after"**: any season taking place within 3 years after the year of their surgery \
 - **"long after"**: any season taking place at least 3 years after the year of their surgery \
@@ -705,10 +706,10 @@ The model built will take the form of a **hierarchical model with varying interc
 
 The first layer of the hierarchical model describes the relationship between SLG and age/surgery status **within** each pitcher $j$ by: 
 \begin{equation}
-Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} .
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij1} + \beta_2 X_{ij2} + \beta_3 X_{ij3} + \beta_4 X_{ij4} .
 \end{equation}
 
-This equation assumes that for each pitcher $j$, SLGs are normally distributed around an age- and surgery status-specific mean, $\beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij}$, with standard deviation $\sigma_y$. We assume the relationships between SLG and age and surgery status *randomly* vary from pitcher to pitcher, as players have different intercepts $\beta_{0j}$ but shared coefficients $(\beta_1, \beta_2, \beta_3, \beta_4)$. This layer of the model depends on 6 parameters, only one of which (**$\beta_{0j}$**) is pitcher-specific. \
+This equation assumes that for each pitcher $j$, SLGs are normally distributed around an age- and surgery status-specific mean, $\beta_{0j} + \beta_1 X_{ij1} + \beta_2 X_{ij2} + \beta_3 X_{ij3} + \beta_4 X_{ij4}$, with standard deviation $\sigma_y$. We assume the relationships between SLG and age and surgery status *randomly* vary from pitcher to pitcher, as players have different intercepts $\beta_{0j}$ but shared coefficients $(\beta_1, \beta_2, \beta_3, \beta_4)$. This layer of the model depends on 6 parameters, only one of which (**$\beta_{0j}$**) is pitcher-specific. \
 
 - **$\beta_{0j}$**: intercept of the regression model for pitcher $j$ \
 - **$\beta_1$**: the typical change in a pitcher’s SLG per one year increase in age, holding surgery status constant \
@@ -741,13 +742,10 @@ starters19 %>%
   summarize(mean(SLG), sd(SLG))
 ```
 
+\begin{equation}
 \begin{split}
-Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij} + \beta_2 X_{ij} + \beta_3 X_{ij} + \beta_4 X_{ij} \\
-\end{split}
-\begin{split}
-\beta_{0j} | \beta_0, \sigma_0 \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  \\
-\end{split}
-\begin{split}
+Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y & \sim N(\mu_{ij}, \sigma_y^2) \;\; \text{ where } \; \mu_{ij} = \beta_{0j} + \beta_1 X_{ij1} + \beta_2 X_{ij2} + \beta_3 X_{ij3} + \beta_4 X_{ij4} \\
+\beta_{0j} | \beta_0, \sigma_0 & \stackrel{ind}{\sim} N(\beta_0, \sigma_0^2)  \\
 \beta_{0c}  & \sim N(0.44, 0.069) \\
 \beta_1  & \sim N(0, 0.0439^2) \\
 \beta_2  & \sim N(0, 0.00077^2) \\
@@ -756,7 +754,7 @@ Y_{ij} | \beta_{0j}, \beta_1, \beta_2, \beta_3, \beta_4, \sigma_y \sim N(\mu_{ij
 \sigma_y & \sim \text{Exp}(1) \\
 \sigma_0 & \sim \text{Exp}(1). \\
 \end{split}
-
+\end{equation}
 
 ```{r}
 #get data ready - this model does not use all players as 
@@ -848,8 +846,15 @@ slgData %>%
         axis.title.y = element_markdown(family="mono", size = 11), 
         legend.title = element_markdown(family="mono", size = 11), 
         legend.text = element_markdown(family="mono", size = 11))
-```
 
+slgData %>%
+  add_fitted_draws(slgMod, n = 100) %>%
+  ggplot(aes(x = Age, y = SLG)) +
+    geom_line(
+      aes(y = .value, group = paste(seasonTime, .draw), color = seasonTime),
+      alpha = 0.1) +
+    geom_point(aes(color = runner))
+```
 
 **Both `seasonTime` coefficients are significant**. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better *short after* their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better *long after* their surgery in comparison to no surgery (holding age constant). As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing "short after" his surgery to "long after" it. 
 
