@@ -965,3 +965,7 @@ Thinking about the second model, **we found a statistically significant relation
   - Use all players (including those that had Tommy John surgery before reaching the majors) and data from currently active players so that we can predict performance for active players in their upcoming 2022 or 2023 season \
 
 There is still **so much** to be learned about the complex relationship between Tommy John surgery, aging, and pitcher performance. While there are flaws in this analysis (like most analyses), it is a step in the right direction to understanding this complicated relationship. And in the Bayesian spirit, I plan continue to update my knowledge about the Tommy John surgery, aging, and pitcher performance using additional data, modeling techniques, and baseball IQ in the future. 
+
+## Acknowledgements
+
+This project would not be possible without the support from my Bayesian Statistics professor **Alicia Johnson** or my advisor on this project **Victor Addona**. I cannot thank you both enough for your support and for helping me think through some very complicated problems!! I've learned so much over the course of this project and owe it to you both so **thank you**.  
