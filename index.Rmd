@@ -447,8 +447,8 @@ Looking at the significant coefficients, we understand that: \
 With a model, we can now use it in context. For example, suppose we wanted to predict whether or not [Tyler Glasnow](https://www.baseball-reference.com/players/g/glasnty01.shtml) will return to play again at the MLB level following his Tommy John surgery that occurred on August 4, 2021. Glasnow is currently a starter for the Tampa Bay Rays. Up until his surgery, he has averaged a WHIP of 1.248, 1.255 strikeouts per inning, and has pitched 403 innings. He was drafted out of high school and had surgery at age 27.948. To predict whether Glasnow will return to the MLB, we can approximate the posterior predictive model for the binary outcomes of $Y$, whether the pitcher plays again, where 
 
 \begin{split}
-Y | \beta_0, \beta_1, \beta_2, \beta_3, \beta_4, \beta_5, \beta_6 \sim \text{Bern}(\pi) \\
-\text{ with } \;\; \log\left( \frac{\pi}{1-\pi}\right) = \beta_0 + \beta_1 * 1 + \beta_2 * 403 + \beta_3 * 1.248 + \beta_4 * 1 + \beta_5 * 1.255 + \beta_6 * 27.948
+Y | \beta_0, \beta_1, \beta_2, \beta_3, \beta_4, \beta_5, \beta_6 & \sim \text{Bern}(\pi) \\
+\text{ with } \;\; \log\left( \frac{\pi}{1-\pi}\right) = \beta_0 + \beta_1 * 1 + \beta_2 * 403 + \beta_3 * & 1.248 + \beta_4 * 1 + \beta_5 * 1.255 + \beta_6 * 27.948
 \end{split}
 
 We can simulate 20,000 posterior predictions of $Y$ and learn 91.085% of them call for Glasnow to return to the MLB, making it reasonable to predict he will return after recovering from his surgery. 
@@ -771,7 +771,7 @@ slgData <- starters19 %>%
 
 ```{r, eval=FALSE}
 slgMod<- stan_glmer(
-  SLG ~ Age + age2 + seasonTime + (1 | Player),
+  SLG ~ Age + I(Age^2) + seasonTime + (1 | Player),
   data = slgData, family = gaussian,
   prior_intercept = normal(0.44, 0.069),
   prior = normal(0, 2.5, autoscale = TRUE),
@@ -826,18 +826,20 @@ tidyMod %>%
 ```
 
 \
-With this summary, we see that the 80% credible interval on the `Age` coefficient includes 0. However, the age squared (`age2`) coefficient is significant. Given that these coefficients work together, **there is evidence that the typical pitcher tends get worse with age** (holding surgery status constant). This relationship can be seen below in the plot below of 200 posterior plausible global model lines. 
+With this summary, we see that the 80% credible interval on the `Age` coefficient includes 0. However, the age squared (`I(Age^2`) coefficient is significant. Given that these coefficients work together, **there is evidence that the typical pitcher tends get worse with age** (holding surgery status constant). This relationship can be seen below in the plot below of 200 posterior plausible global model lines. 
 
 ```{r}
 B0 <- tidyMod$estimate[1]
 B1 <- tidyMod$estimate[2]
 B2 <- tidyMod$estimate[3]
-slopeB = B1 + B2
+
+post_med <- function(x){B0 + B1 * x + B2 * x^2}
+
 slgData %>%
   add_fitted_draws(slgMod, n = 200, re_formula = NA) %>%
   ggplot(aes(x = Age, y = SLG)) +
     geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
-    geom_abline(intercept = B0, slope = slopeB, color = "blue")+
+    geom_function(fun = post_med, color = "blue")+
   labs(title = "Possible posterior relationship between Age and SLG")+
   theme_classic()+
   theme(plot.title.position = "plot", 
@@ -845,15 +847,8 @@ slgData %>%
         axis.title.x = element_markdown(family="mono", size = 11), 
         axis.title.y = element_markdown(family="mono", size = 11), 
         legend.title = element_markdown(family="mono", size = 11), 
-        legend.text = element_markdown(family="mono", size = 11))
-
-slgData %>%
-  add_fitted_draws(slgMod, n = 100) %>%
-  ggplot(aes(x = Age, y = SLG)) +
-    geom_line(
-      aes(y = .value, group = paste(seasonTime, .draw), color = seasonTime),
-      alpha = 0.1) +
-    geom_point(aes(color = runner))
+        legend.text = element_markdown(family="mono", size = 11))+
+  xlim(19,36)
 ```
 
 **Both `seasonTime` coefficients are significant**. This signifies that there is an 80% chance that the typical pitcher tends perform somewhere between 0.023 and 0.004 SLG better *short after* their surgery in comparison to no surgery, and somewhere 0.027 and 0.006 SLG better *long after* their surgery in comparison to no surgery (holding age constant). As seen below in the plot below, the typical pitcher does not have a difference in SLG comparing "short after" his surgery to "long after" it. 
