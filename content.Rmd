@@ -17,7 +17,9 @@ library(stringr)
 `%!in%` <- Negate(`%in%`)
 ```
 
-**The following document shows my data cleaning steps.**
+**The following document shows my data cleaning steps.** \
+
+Each of the data files mentioned in this document can be downloaded from my [mlbdraft_data Github respository](https://github.com/efranke22/mlbdraft_data). 
 
 Download each season of debuts (1987-2021) from Baseball Reference. As an example, 2021 debuts can be found [here](https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching). The dates had to be properly formatted before binding rows as the year was not recorded when downloading the data. 
 ```{r}

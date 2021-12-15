@@ -263,7 +263,9 @@ $(document).ready(function () {
 </div>
 
 
-<p><strong>The following document shows my data cleaning steps.</strong></p>
+<p><strong>The following document shows my data cleaning steps.</strong><br />
+</p>
+<p>Each of the data files mentioned in this document can be downloaded from my <a href="https://github.com/efranke22/mlbdraft_data">mlbdraft_data Github respository</a>.</p>
 <p>Download each season of debuts (1987-2021) from Baseball Reference. As an example, 2021 debuts can be found <a href="https://www.baseball-reference.com/leagues/majors/2021-debuts.shtml#all_misc_pitching">here</a>. The dates had to be properly formatted before binding rows as the year was not recorded when downloading the data.</p>
 <pre class="r"><code>debuts1987 &lt;- read_xls(&quot;data/pitcherdebuts/debuts1987.xls&quot;) %&gt;%
   mutate(yeard = 1987, 
