@@ -370,7 +370,7 @@ Thus the *probability* of the average pitcher returning to pitch at the MLB leve
 We have only a very basic understanding of each predictor's relationship with a player's likelihood of returning to pitch at the MLB level and thus will utilize weakly informative priors for these coefficients. As a result, their coefficients are centered at 0 and they have a fairly wide standard deviation. As a whole, the model can be summarized as: \
 
 \begin{array}{lcrl} 
-\text{data:} & \hspace{.01in} & Y_i|\beta_0,\beta_1 & \stackrel{ind}{\sim} \text{Bern}(\pi_i) \;\; \text{ with } \;\; \log\left(\frac{\pi_i}{1 - \pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \beta_4 X_{i4} + \beta_5 X_{i5} + \beta_6 X_{i6}\\
+\text{data:} & \hspace{.01in} & Y_i|\beta_0,\beta_1,\beta_2,\beta_3,\beta_4,\beta_5,\beta_6,  & \stackrel{ind}{\sim} \text{Bern}(\pi_i) \;\; \text{ with } \;\; \log\left(\frac{\pi_i}{1 - \pi_i}\right) = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \beta_4 X_{i4} + \beta_5 X_{i5} + \beta_6 X_{i6}\\
 \text{priors:} & & \beta_{0c}  &  \sim N\left(1, 0.35^2 \right)  \\
                & & \beta_1  & \sim N\left(0, 5.0164^2 \right) \\
                & & \beta_2  & \sim N\left(0, 0.00585^2 \right) \\
